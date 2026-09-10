@@ -1,0 +1,17 @@
+node_modules/
+dist/
+target/
+results/*
+!results/.gitignore
+.idea/
+.vscode/
+# sandbox/dotfile shims that show up in this dir
+.bash_profile
+.bashrc
+.gitconfig
+.gitmodules
+.profile
+.zprofile
+.zshrc
+.ripgreprc
+.mcp.json

@@ -1,0 +1,54 @@
+[package]
+name = "bench-app"
+version = "0.1.0"
+description = "Small Tauri app used to benchmark build-time optimisations in CI"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "bench_app_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", optional = true }
+sha2 = "0.10"
+hex = "0.4"
+
+# Optional "heavy" dependency set, used to measure how much a typical
+# networking stack adds to compile time. Enabled with `--features heavy`.
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"], optional = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"], optional = true }
+
+[features]
+default = []
+heavy = ["dep:reqwest", "dep:tokio", "dep:serde_json"]
+
+# The profiles below are the *defaults*. Experiments override individual
+# knobs through CARGO_PROFILE_RELEASE_* environment variables so the
+# source tree stays identical across variants (which keeps caches comparable).
+[profile.release]
+codegen-units = 16
+lto = false
+opt-level = 3
+debug = false
+strip = true
+panic = "unwind"
+incremental = false
+
+# A "fast" profile for CI smoke builds: trades binary size / runtime speed
+# for compile time. Select with `cargo tauri build -- --profile fast`.
+[profile.fast]
+inherits = "release"
+opt-level = 1
+codegen-units = 256
+lto = "off"
+debug = false
+strip = true

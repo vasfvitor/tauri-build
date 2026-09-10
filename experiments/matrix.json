@@ -1,0 +1,44 @@
+{
+  "$comment": "Each entry is one build variant. Every key except `name`, `group` and `os` maps 1:1 to an input of .github/workflows/build.yml. Omitted keys use the workflow defaults. `os` is a list; the dispatcher expands it. `group` lets scripts/run.sh select a whole family (e.g. --only cache).",
+  "defaults": {
+    "os": ["ubuntu-24.04", "windows-2022", "macos-14"]
+  },
+  "experiments": [
+    { "name": "baseline",            "group": "baseline", "cache": "none" },
+
+    { "name": "cache-swatinem",      "group": "cache", "cache": "swatinem" },
+    { "name": "cache-sccache",       "group": "cache", "cache": "sccache" },
+    { "name": "cache-both",          "group": "cache", "cache": "swatinem+sccache" },
+    { "name": "cache-actions-cargo", "group": "cache", "cache": "actions-cache" },
+
+    { "name": "linker-lld",          "group": "linker", "os": ["ubuntu-24.04", "windows-2022"], "linker": "lld" },
+    { "name": "linker-mold",         "group": "linker", "os": ["ubuntu-24.04"], "linker": "mold" },
+
+    { "name": "lto-off",             "group": "profile", "lto": "off" },
+    { "name": "lto-thin",            "group": "profile", "lto": "thin" },
+    { "name": "lto-fat",             "group": "profile", "lto": "fat" },
+    { "name": "cgu-1",               "group": "profile", "codegen_units": "1" },
+    { "name": "cgu-256",             "group": "profile", "codegen_units": "256" },
+    { "name": "opt-1",               "group": "profile", "opt_level": "1" },
+    { "name": "opt-s",               "group": "profile", "opt_level": "s" },
+    { "name": "profile-fast",        "group": "profile", "cargo_profile": "fast" },
+    { "name": "panic-abort",         "group": "profile", "panic": "abort" },
+    { "name": "incremental-on",      "group": "profile", "incremental": "true", "cache": "swatinem" },
+
+    { "name": "bundle-none",         "group": "bundle", "bundles": "none" },
+    { "name": "bundle-deb",          "group": "bundle", "bundles": "deb",  "os": ["ubuntu-24.04"] },
+    { "name": "bundle-app",          "group": "bundle", "bundles": "app",  "os": ["macos-14"] },
+    { "name": "bundle-nsis",         "group": "bundle", "bundles": "nsis", "os": ["windows-2022"] },
+
+    { "name": "deps-heavy",          "group": "deps", "features": "heavy" },
+    { "name": "deps-heavy-cached",   "group": "deps", "features": "heavy", "cache": "swatinem" },
+
+    { "name": "frontend-no-cache",   "group": "frontend", "pnpm_cache": "false" },
+
+    { "name": "nightly-threads",     "group": "toolchain", "toolchain": "nightly", "rustflags_extra": "-Zthreads=8" },
+
+    { "name": "combo-fastest",       "group": "combo", "cache": "swatinem", "linker": "lld", "codegen_units": "256", "lto": "off", "bundles": "none", "os": ["ubuntu-24.04", "windows-2022"] },
+    { "name": "combo-fastest-mac",   "group": "combo", "cache": "swatinem", "codegen_units": "256", "lto": "off", "bundles": "none", "os": ["macos-14"] },
+    { "name": "combo-release",       "group": "combo", "cache": "swatinem+sccache", "linker": "lld", "lto": "thin", "codegen_units": "16", "os": ["ubuntu-24.04", "windows-2022"] }
+  ]
+}

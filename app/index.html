@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bench App</title>
+    <style>
+      :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
+      body { margin: 0; padding: 2rem; max-width: 720px; }
+      section { border: 1px solid #8884; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+      input, textarea { width: 100%; box-sizing: border-box; margin: .5rem 0; }
+      pre { background: #8882; padding: .5rem; overflow: auto; }
+      button { margin-right: .5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Bench App</h1>
+    <p id="build-info"></p>
+
+    <section>
+      <h2>Counter (frontend only)</h2>
+      <button id="inc">+1</button><span id="count">0</span>
+    </section>
+
+    <section>
+      <h2>Hash text (Rust command)</h2>
+      <input id="hash-input" placeholder="type something" value="hello tauri" />
+      <button id="hash-btn">SHA-256</button>
+      <pre id="hash-out"></pre>
+    </section>
+
+    <section>
+      <h2>Read a file (dialog + fs plugins)</h2>
+      <button id="open-btn">Open file…</button>
+      <pre id="file-out"></pre>
+    </section>
+
+    <section>
+      <h2>Fetch JSON (Rust, only with the <code>heavy</code> feature)</h2>
+      <input id="url-input" value="https://api.github.com/repos/tauri-apps/tauri" />
+      <button id="fetch-btn">Fetch</button>
+      <pre id="fetch-out"></pre>
+    </section>
+
+    <section>
+      <h2>Open link (opener plugin)</h2>
+      <button id="link-btn">tauri.app</button>
+    </section>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

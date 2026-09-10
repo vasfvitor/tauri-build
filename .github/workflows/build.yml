@@ -1,0 +1,240 @@
+name: build-variant
+
+# Reusable workflow: one Tauri build with every optimisation knob exposed as
+# an input. Called by experiments.yml for each entry of experiments/matrix.json.
+on:
+  workflow_call:
+    inputs:
+      name:            { type: string,  required: true }
+      os:              { type: string,  required: true }
+      cache:           { type: string,  default: "none" }        # none | swatinem | sccache | swatinem+sccache | actions-cache
+      linker:          { type: string,  default: "default" }     # default | lld | mold
+      toolchain:       { type: string,  default: "stable" }      # stable | nightly | 1.xx
+      cargo_profile:   { type: string,  default: "release" }     # release | fast
+      lto:             { type: string,  default: "" }            # "" | off | thin | fat | true | false
+      codegen_units:   { type: string,  default: "" }
+      opt_level:       { type: string,  default: "" }
+      panic:           { type: string,  default: "" }            # "" | unwind | abort
+      incremental:     { type: string,  default: "" }            # "" | true | false
+      debug:           { type: string,  default: "" }            # "" | 0 | 1 | 2 | line-tables-only
+      rustflags_extra: { type: string,  default: "" }
+      bundles:         { type: string,  default: "" }            # "" (tauri default) | none | deb | appimage | rpm | app | dmg | nsis | msi
+      features:        { type: string,  default: "" }
+      target:          { type: string,  default: "" }            # e.g. aarch64-apple-darwin
+      pnpm_cache:      { type: string,  default: "true" }
+      runs:            { type: string,  default: "1" }           # build N times in the same job (2 = measure warm incremental)
+      run_id_tag:      { type: string,  default: "" }            # free text that ends up in the timing JSON
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: short
+
+jobs:
+  build:
+    name: ${{ inputs.name }} / ${{ inputs.os }}
+    runs-on: ${{ inputs.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start clock
+        run: echo "T_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+
+      # ---------- system deps ----------
+      - name: Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          t0=$(date +%s)
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf \
+            build-essential curl wget file libxdo-dev libssl-dev pkg-config
+          echo "T_SYSDEPS=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+
+      # ---------- toolchains ----------
+      - name: Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.toolchain }}
+          targets: ${{ inputs.target }}
+
+      - name: Linker (lld)
+        if: inputs.linker == 'lld'
+        run: |
+          # On Linux we go through clang; on Windows rust-lld ships with the toolchain.
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get install -y -qq lld clang
+            echo "RUSTFLAGS_LINKER=-C linker=clang -C link-arg=-fuse-ld=lld" >> "$GITHUB_ENV"
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            echo "RUSTFLAGS_LINKER=-C linker=rust-lld.exe" >> "$GITHUB_ENV"
+          fi
+
+      - name: Linker (mold)
+        if: inputs.linker == 'mold'
+        uses: rui314/setup-mold@v1
+        with:
+          make-default: false
+      - name: Linker (mold) flags
+        if: inputs.linker == 'mold'
+        # rustc >= 1.90 links through its bundled rust-lld and never calls the
+        # system `ld`, so the setup-mold symlink alone would change nothing.
+        run: |
+          sudo apt-get install -y -qq clang
+          echo "RUSTFLAGS_LINKER=-C linker=clang -C link-arg=-fuse-ld=mold" >> "$GITHUB_ENV"
+
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ${{ inputs.pnpm_cache == 'true' && 'pnpm' || '' }}
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      # ---------- caches ----------
+      - name: Cache (Swatinem/rust-cache)
+        if: contains(inputs.cache, 'swatinem')
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri -> target
+          # Key on the variant so profile/linker changes don't poison each other.
+          key: ${{ inputs.name }}-${{ inputs.target }}
+          cache-on-failure: true
+
+      - name: Cache (sccache)
+        if: contains(inputs.cache, 'sccache')
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Enable sccache
+        if: contains(inputs.cache, 'sccache')
+        run: |
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          # sccache cannot cache incremental artifacts
+          echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+
+      - name: Cache (plain actions/cache on ~/.cargo + target)
+        if: inputs.cache == 'actions-cache'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            app/src-tauri/target
+          key: ${{ runner.os }}-${{ inputs.name }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ inputs.name }}-
+
+      # ---------- profile knobs (env beats editing Cargo.toml: source stays identical) ----------
+      - name: Export profile overrides
+        env:
+          IN_PROFILE: ${{ inputs.cargo_profile }}
+          IN_LTO: ${{ inputs.lto }}
+          IN_CGU: ${{ inputs.codegen_units }}
+          IN_OPT: ${{ inputs.opt_level }}
+          IN_PANIC: ${{ inputs.panic }}
+          IN_INCR: ${{ inputs.incremental }}
+          IN_DEBUG: ${{ inputs.debug }}
+          IN_RUSTFLAGS: ${{ inputs.rustflags_extra }}
+        run: |
+          P="CARGO_PROFILE_$(echo "$IN_PROFILE" | tr a-z A-Z)"
+          [ -n "$IN_LTO" ]   && echo "${P}_LTO=$IN_LTO"           >> "$GITHUB_ENV"
+          [ -n "$IN_CGU" ]   && echo "${P}_CODEGEN_UNITS=$IN_CGU" >> "$GITHUB_ENV"
+          [ -n "$IN_OPT" ]   && echo "${P}_OPT_LEVEL=$IN_OPT"     >> "$GITHUB_ENV"
+          [ -n "$IN_PANIC" ] && echo "${P}_PANIC=$IN_PANIC"       >> "$GITHUB_ENV"
+          [ -n "$IN_INCR" ]  && echo "${P}_INCREMENTAL=$IN_INCR"  >> "$GITHUB_ENV"
+          [ -n "$IN_DEBUG" ] && echo "${P}_DEBUG=$IN_DEBUG"       >> "$GITHUB_ENV"
+          # rust-cache exports CARGO_INCREMENTAL=0, which overrides the profile
+          # setting; re-enable it explicitly when the experiment asks for it.
+          [ "$IN_INCR" = "true" ] && echo "CARGO_INCREMENTAL=1" >> "$GITHUB_ENV"
+          echo "RUSTFLAGS=${RUSTFLAGS_LINKER:-} $IN_RUSTFLAGS" >> "$GITHUB_ENV"
+
+      # ---------- frontend ----------
+      - name: pnpm install
+        run: |
+          t0=$(date +%s)
+          pnpm install --frozen-lockfile
+          echo "T_PNPM=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+
+      - name: Generate icons
+        run: pnpm tauri icon src-tauri/app-icon.png
+
+      # ---------- the build (possibly repeated) ----------
+      - name: cargo tauri build
+        id: build
+        env:
+          IN_TARGET: ${{ inputs.target }}
+          IN_FEATURES: ${{ inputs.features }}
+          IN_BUNDLES: ${{ inputs.bundles }}
+          IN_PROFILE: ${{ inputs.cargo_profile }}
+          IN_RUNS: ${{ inputs.runs }}
+        run: |
+          ARGS=()
+          [ -n "$IN_TARGET" ]   && ARGS+=(--target "$IN_TARGET")
+          [ -n "$IN_FEATURES" ] && ARGS+=(--features "$IN_FEATURES")
+          case "$IN_BUNDLES" in
+            "")   ;;
+            none) ARGS+=(--no-bundle) ;;
+            *)    ARGS+=(--bundles "$IN_BUNDLES") ;;
+          esac
+          CARGO_ARGS=(--timings)
+          [ -f src-tauri/Cargo.lock ] && CARGO_ARGS+=(--locked)
+          [ "$IN_PROFILE" != "release" ] && CARGO_ARGS+=(--profile "$IN_PROFILE")
+
+          for i in $(seq 1 "$IN_RUNS"); do
+            if [ "$i" -gt 1 ]; then
+              # Touch app code so build #i measures an app-crate rebuild, not a
+              # cargo freshness no-op.
+              printf '\n// rebuild marker %s\n' "$i" >> src-tauri/src/lib.rs
+            fi
+            t0=$(date +%s)
+            pnpm tauri build "${ARGS[@]}" -- "${CARGO_ARGS[@]}"
+            echo "T_BUILD_$i=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+          done
+
+      - name: sccache stats
+        if: contains(inputs.cache, 'sccache')
+        run: sccache --show-stats
+
+      # ---------- measurements ----------
+      - name: Write timing record
+        if: always()
+        env:
+          REC_NAME: ${{ inputs.name }}
+          REC_OS: ${{ inputs.os }}
+          REC_STATUS: ${{ steps.build.outcome }}
+          REC_TAG: ${{ inputs.run_id_tag }}
+          REC_INPUTS: ${{ toJSON(inputs) }}
+          IN_TARGET: ${{ inputs.target }}
+          IN_PROFILE: ${{ inputs.cargo_profile }}
+        run: |
+          mkdir -p ../timings
+          TARGET_DIR="src-tauri/target${IN_TARGET:+/$IN_TARGET}/$IN_PROFILE"
+          BIN=$(ls "$TARGET_DIR"/bench-app* 2>/dev/null | grep -vE '\.d$|\.pdb$' | head -1 || true)
+          BIN_SIZE=$( [ -n "$BIN" ] && wc -c < "$BIN" || echo 0 )
+          BUNDLE_SIZE=$( [ -d "$TARGET_DIR/bundle" ] && du -sk "$TARGET_DIR/bundle" | cut -f1 || echo 0 )
+          OUT="../timings/${REC_NAME}--${REC_OS}.json"
+          node ../scripts/record.mjs \
+            --name "$REC_NAME" --os "$REC_OS" --status "$REC_STATUS" --tag "$REC_TAG" \
+            --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
+            --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" \
+            --build1 "${T_BUILD_1:-0}" --build2 "${T_BUILD_2:-0}" \
+            --job-total "$(( $(date +%s) - T_JOB_START ))" \
+            --binary-bytes "${BIN_SIZE:-0}" --bundle-kbytes "${BUNDLE_SIZE:-0}" \
+            > "$OUT"
+          cat "$OUT"
+
+      - name: Upload timing + cargo --timings report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: timing--${{ inputs.name }}--${{ inputs.os }}
+          path: |
+            timings/*.json
+            app/src-tauri/target/**/cargo-timings/cargo-timing.html
+            app/src-tauri/Cargo.lock
+          if-no-files-found: warn
+          retention-days: 30

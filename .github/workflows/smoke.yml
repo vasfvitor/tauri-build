@@ -1,0 +1,19 @@
+name: smoke
+
+# Cheap sanity check on every push: does the app still build on Linux with
+# a fast profile? Keeps the experiment matrix from rotting.
+on:
+  push:
+    branches: [main]
+    paths: ["app/**", ".github/workflows/**", "scripts/**"]
+  pull_request:
+
+jobs:
+  smoke:
+    uses: ./.github/workflows/build.yml
+    with:
+      name: smoke
+      os: ubuntu-24.04
+      cache: swatinem
+      bundles: none
+      cargo_profile: fast

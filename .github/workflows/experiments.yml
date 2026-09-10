@@ -1,0 +1,96 @@
+name: experiments
+
+# Dispatcher. Reads experiments/matrix.json, filters it by the dispatch
+# inputs, fans out one build.yml call per (experiment, os), then aggregates
+# every timing JSON into a Markdown table (job summary + downloadable artifact).
+#
+# Drive it from the CLI with scripts/run.sh instead of the web UI.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma-separated experiment names or groups (empty = all)"
+        type: string
+        default: ""
+      os:
+        description: "Comma-separated runner labels to keep (empty = as declared)"
+        type: string
+        default: ""
+      runs:
+        description: "Builds per job (2 = also measure a warm incremental rebuild)"
+        type: string
+        default: "1"
+      tag:
+        description: "Free label stored in every timing record"
+        type: string
+        default: ""
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          ONLY: ${{ inputs.only }}
+          OS: ${{ inputs.os }}
+        run: |
+          node scripts/plan.mjs experiments/matrix.json > matrix.json
+          echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
+          echo "count=$(node -e 'console.log(require("./matrix.json").include.length)')" >> "$GITHUB_OUTPUT"
+          echo "### Planned jobs" >> "$GITHUB_STEP_SUMMARY"
+          node -e 'for (const j of require("./matrix.json").include) console.log(`- ${j.name} / ${j.os}`)' >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/build.yml
+    with:
+      name:            ${{ matrix.name }}
+      os:              ${{ matrix.os }}
+      cache:           ${{ matrix.cache || 'none' }}
+      linker:          ${{ matrix.linker || 'default' }}
+      toolchain:       ${{ matrix.toolchain || 'stable' }}
+      cargo_profile:   ${{ matrix.cargo_profile || 'release' }}
+      lto:             ${{ matrix.lto || '' }}
+      codegen_units:   ${{ matrix.codegen_units || '' }}
+      opt_level:       ${{ matrix.opt_level || '' }}
+      panic:           ${{ matrix.panic || '' }}
+      incremental:     ${{ matrix.incremental || '' }}
+      debug:           ${{ matrix.debug || '' }}
+      rustflags_extra: ${{ matrix.rustflags_extra || '' }}
+      bundles:         ${{ matrix.bundles || '' }}
+      features:        ${{ matrix.features || '' }}
+      target:          ${{ matrix.target || '' }}
+      pnpm_cache:      ${{ matrix.pnpm_cache || 'true' }}
+      runs:            ${{ inputs.runs }}
+      run_id_tag:      ${{ inputs.tag }}
+
+  report:
+    needs: [plan, build]
+    if: always() && needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: timing--*
+          path: artifacts
+          merge-multiple: true
+      - name: Aggregate
+        run: |
+          node scripts/summarize.mjs artifacts/timings > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p out && cp report.md out/ && cp artifacts/timings/*.json out/ || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: out
+          retention-days: 90
