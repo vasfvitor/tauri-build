@@ -1,8 +1,6 @@
 node_modules/
 dist/
 target/
-results/*
-!results/.gitignore
 .idea/
 .vscode/
 # sandbox/dotfile shims that show up in this dir
@@ -15,3 +13,4 @@ results/*
 .zshrc
 .ripgreprc
 .mcp.json
+.claude/

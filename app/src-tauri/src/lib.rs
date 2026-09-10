@@ -1,4 +1,7 @@
 use serde::Serialize;
+
+#[cfg(feature = "big")]
+include!(concat!(env!("OUT_DIR"), "/big.rs"));
 use sha2::{Digest, Sha256};
 
 #[derive(Serialize)]

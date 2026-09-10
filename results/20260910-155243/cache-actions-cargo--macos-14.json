@@ -1,0 +1,17 @@
+{
+  "name": "cache-actions-cargo",
+  "os": "macos-14",
+  "status": "success",
+  "tag": "20260910-155243",
+  "run_id": "34517015189",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 1,
+    "build_1": 194,
+    "build_2": 0,
+    "job_total": 215
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 10412
+}

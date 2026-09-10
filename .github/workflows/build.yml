@@ -7,6 +7,7 @@ on:
     inputs:
       name:            { type: string,  required: true }
       os:              { type: string,  required: true }
+      rep:             { type: string,  default: "1" }           # repetition index, only affects artifact naming
       cache:           { type: string,  default: "none" }        # none | swatinem | sccache | swatinem+sccache | actions-cache
       linker:          { type: string,  default: "default" }     # default | lld | mold
       toolchain:       { type: string,  default: "stable" }      # stable | nightly | 1.xx
@@ -19,10 +20,11 @@ on:
       debug:           { type: string,  default: "" }            # "" | 0 | 1 | 2 | line-tables-only
       rustflags_extra: { type: string,  default: "" }
       bundles:         { type: string,  default: "" }            # "" (tauri default) | none | deb | appimage | rpm | app | dmg | nsis | msi
-      features:        { type: string,  default: "" }
+      features:        { type: string,  default: "" }            # e.g. heavy | big | heavy,big
       target:          { type: string,  default: "" }            # e.g. aarch64-apple-darwin
       pnpm_cache:      { type: string,  default: "true" }
-      runs:            { type: string,  default: "1" }           # build N times in the same job (2 = measure warm incremental)
+      change:          { type: string,  default: "none" }        # none | app | deps : what "changed since the last build" (applied before building)
+      runs:            { type: string,  default: "1" }           # build N times in the same job (run 2+ touches app code first)
       run_id_tag:      { type: string,  default: "" }            # free text that ends up in the timing JSON
 
 env:
@@ -31,7 +33,7 @@ env:
 
 jobs:
   build:
-    name: ${{ inputs.name }} / ${{ inputs.os }}
+    name: ${{ inputs.name }} / ${{ inputs.os }} #${{ inputs.rep }}
     runs-on: ${{ inputs.os }}
     defaults:
       run:
@@ -41,7 +43,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Start clock
-        run: echo "T_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+        run: |
+          echo "T_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+          echo "NCPU=$(nproc 2>/dev/null || sysctl -n hw.ncpu)" >> "$GITHUB_ENV"
 
       # ---------- system deps ----------
       - name: Linux system deps
@@ -113,6 +117,9 @@ jobs:
         run: |
           echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
           echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          # Namespace the sccache entries per experiment; the GHA backend is
+          # otherwise shared by every job in the repository.
+          echo "SCCACHE_GHA_VERSION=${{ inputs.name }}" >> "$GITHUB_ENV"
           # sccache cannot cache incremental artifacts
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
 
@@ -162,6 +169,32 @@ jobs:
       - name: Generate icons
         run: pnpm tauri icon src-tauri/app-icon.png
 
+      - name: Frontend build (timed separately)
+        # `tauri build` runs `pnpm build` again through beforeBuildCommand; the
+        # second run is fully cached by Vite/tsc, so this gives a clean number.
+        run: |
+          t0=$(date +%s)
+          pnpm build
+          echo "T_FRONTEND=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+
+      # ---------- simulate "what changed since the cached build" ----------
+      - name: Apply change scenario
+        env:
+          IN_CHANGE: ${{ inputs.change }}
+        run: |
+          case "$IN_CHANGE" in
+            none) ;;
+            app)
+              printf '\n// change scenario: app (%s)\npub fn perturb_%s() -> u64 { %s }\n' \
+                "$GITHUB_RUN_ID" "$GITHUB_RUN_ID" "$GITHUB_RUN_ID" >> src-tauri/src/lib.rs ;;
+            deps)
+              # Adds a mid-sized crate: Cargo.lock changes, lockfile-keyed caches miss.
+              cargo add chrono@0.4 --manifest-path src-tauri/Cargo.toml
+              printf '\n// change scenario: deps (%s)\npub fn perturb_%s() -> String { chrono::Utc::now().to_rfc3339() }\n' \
+                "$GITHUB_RUN_ID" "$GITHUB_RUN_ID" >> src-tauri/src/lib.rs ;;
+            *) echo "unknown change scenario: $IN_CHANGE" >&2; exit 1 ;;
+          esac
+
       # ---------- the build (possibly repeated) ----------
       - name: cargo tauri build
         id: build
@@ -184,6 +217,7 @@ jobs:
           [ -f src-tauri/Cargo.lock ] && CARGO_ARGS+=(--locked)
           [ "$IN_PROFILE" != "release" ] && CARGO_ARGS+=(--profile "$IN_PROFILE")
 
+          mkdir -p ../timings
           for i in $(seq 1 "$IN_RUNS"); do
             if [ "$i" -gt 1 ]; then
               # Touch app code so build #i measures an app-crate rebuild, not a
@@ -193,6 +227,12 @@ jobs:
             t0=$(date +%s)
             pnpm tauri build "${ARGS[@]}" -- "${CARGO_ARGS[@]}"
             echo "T_BUILD_$i=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+            # cargo's own wall time, from the --timings report
+            HTML=$(ls src-tauri/target/cargo-timings/cargo-timing.html 2>/dev/null || true)
+            if [ -n "$HTML" ]; then
+              cp "$HTML" "../timings/${{ inputs.name }}--${{ inputs.os }}--${{ inputs.rep }}.run$i.cargo-timing.html"
+              echo "T_CARGO_$i=$(grep -o 'Total time:</td><td>[0-9.]*' "$HTML" | head -1 | sed 's/.*<td>//; s/\..*//')" >> "$GITHUB_ENV"
+            fi
           done
 
       - name: sccache stats
@@ -205,9 +245,11 @@ jobs:
         env:
           REC_NAME: ${{ inputs.name }}
           REC_OS: ${{ inputs.os }}
+          REC_REP: ${{ inputs.rep }}
           REC_STATUS: ${{ steps.build.outcome }}
           REC_TAG: ${{ inputs.run_id_tag }}
-          REC_INPUTS: ${{ toJSON(inputs) }}
+          REC_CHANGE: ${{ inputs.change }}
+          REC_FEATURES: ${{ inputs.features }}
           IN_TARGET: ${{ inputs.target }}
           IN_PROFILE: ${{ inputs.cargo_profile }}
         run: |
@@ -216,25 +258,26 @@ jobs:
           BIN=$(ls "$TARGET_DIR"/bench-app* 2>/dev/null | grep -vE '\.d$|\.pdb$' | head -1 || true)
           BIN_SIZE=$( [ -n "$BIN" ] && wc -c < "$BIN" || echo 0 )
           BUNDLE_SIZE=$( [ -d "$TARGET_DIR/bundle" ] && du -sk "$TARGET_DIR/bundle" | cut -f1 || echo 0 )
-          OUT="../timings/${REC_NAME}--${REC_OS}.json"
+          OUT="../timings/${REC_NAME}--${REC_OS}--${REC_REP}.json"
           node ../scripts/record.mjs \
-            --name "$REC_NAME" --os "$REC_OS" --status "$REC_STATUS" --tag "$REC_TAG" \
+            --name "$REC_NAME" --os "$REC_OS" --rep "$REC_REP" --status "$REC_STATUS" --tag "$REC_TAG" \
+            --change "$REC_CHANGE" --features "$REC_FEATURES" --ncpu "${NCPU:-0}" \
             --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
-            --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" \
+            --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" --frontend "${T_FRONTEND:-0}" \
             --build1 "${T_BUILD_1:-0}" --build2 "${T_BUILD_2:-0}" \
+            --cargo1 "${T_CARGO_1:-0}" --cargo2 "${T_CARGO_2:-0}" \
             --job-total "$(( $(date +%s) - T_JOB_START ))" \
             --binary-bytes "${BIN_SIZE:-0}" --bundle-kbytes "${BUNDLE_SIZE:-0}" \
             > "$OUT"
           cat "$OUT"
 
-      - name: Upload timing + cargo --timings report
+      - name: Upload timing record + cargo --timings report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: timing--${{ inputs.name }}--${{ inputs.os }}
+          name: timing--${{ inputs.name }}--${{ inputs.os }}--${{ inputs.rep }}
           path: |
-            timings/*.json
-            app/src-tauri/target/**/cargo-timings/cargo-timing.html
+            timings/
             app/src-tauri/Cargo.lock
           if-no-files-found: warn
           retention-days: 30

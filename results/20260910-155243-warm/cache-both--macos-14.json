@@ -1,0 +1,17 @@
+{
+  "name": "cache-both",
+  "os": "macos-14",
+  "status": "success",
+  "tag": "20260910-155243-warm",
+  "run_id": "34518442568",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "build_1": 19,
+    "build_2": 0,
+    "job_total": 49
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 10404
+}

@@ -1,0 +1,17 @@
+{
+  "name": "baseline",
+  "os": "macos-14",
+  "status": "success",
+  "tag": "20260910-154018",
+  "run_id": "34515763300",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "build_1": 177,
+    "build_2": 0,
+    "job_total": 192
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 10352
+}

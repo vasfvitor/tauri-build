@@ -9,9 +9,10 @@ takes `[N]` minutes per platform. This guide shows which settings shorten
 that, how much each one helps, and when to use it.
 
 All numbers come from a small app with three plugins built on
-`ubuntu-24.04`, `windows-2022` and `macos-14`. The repository with the
-harness is at `[link]`. Your app is bigger; the ratios transfer better than
-the absolute times.
+`ubuntu-24.04`, `windows-2022` and `macos-14`, the standard runners of a
+public repository (4 cores on Linux and Windows, 3 on macOS). Each number is
+the median of three runs. The repository with the harness is at `[link]`.
+Your app is bigger; the ratios transfer better than the absolute times.
 
 ## Where the time goes
 
@@ -33,12 +34,15 @@ This is the change that matters most. Everything else is a refinement.
     workspaces: src-tauri -> target
 ```
 
-| | Cold | Warm (app code changed) | Warm (nothing changed) |
-|---|---:|---:|---:|
-| No cache | `[s]` | `[s]` | `[s]` |
-| `rust-cache` | `[s]` | `[s]` | `[s]` |
-| `sccache` | `[s]` | `[s]` | `[s]` |
-| Both | `[s]` | `[s]` | `[s]` |
+| | Cold | Warm, app code changed | Warm, dependency added | Warm, nothing changed |
+|---|---:|---:|---:|---:|
+| No cache | `[s]` | `[s]` | `[s]` | `[s]` |
+| `rust-cache` | `[s]` | `[s]` | `[s]` | `[s]` |
+| `sccache` | `[s]` | `[s]` | `[s]` | `[s]` |
+| Both | `[s]` | `[s]` | `[s]` | `[s]` |
+
+"App code changed" is the column that matters: it's what every commit does.
+"Nothing changed" flatters any cache that stores the app crate itself.
 
 When to pick which:
 

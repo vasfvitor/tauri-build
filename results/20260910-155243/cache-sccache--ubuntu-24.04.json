@@ -1,0 +1,17 @@
+{
+  "name": "cache-sccache",
+  "os": "ubuntu-24.04",
+  "status": "success",
+  "tag": "20260910-155243",
+  "run_id": "34517015189",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 50,
+    "pnpm_install": 2,
+    "build_1": 492,
+    "build_2": 0,
+    "job_total": 552
+  },
+  "binary_bytes": 10732936,
+  "bundle_kbytes": 347236
+}

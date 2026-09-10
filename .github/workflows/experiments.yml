@@ -20,6 +20,14 @@ on:
         description: "Builds per job (2 = also measure a warm incremental rebuild)"
         type: string
         default: "1"
+      repeat:
+        description: "Repetitions of every job (report shows the median)"
+        type: string
+        default: "1"
+      change:
+        description: "What changed since the cached build: none | app | deps"
+        type: string
+        default: "none"
       tag:
         description: "Free label stored in every timing record"
         type: string
@@ -37,12 +45,13 @@ jobs:
         env:
           ONLY: ${{ inputs.only }}
           OS: ${{ inputs.os }}
+          REPEAT: ${{ inputs.repeat }}
         run: |
           node scripts/plan.mjs experiments/matrix.json > matrix.json
           echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
           echo "count=$(node -e 'console.log(require("./matrix.json").include.length)')" >> "$GITHUB_OUTPUT"
           echo "### Planned jobs" >> "$GITHUB_STEP_SUMMARY"
-          node -e 'for (const j of require("./matrix.json").include) console.log(`- ${j.name} / ${j.os}`)' >> "$GITHUB_STEP_SUMMARY"
+          node -e 'for (const j of require("./matrix.json").include) console.log(`- ${j.name} / ${j.os} #${j.rep}`)' >> "$GITHUB_STEP_SUMMARY"
 
   build:
     needs: plan
@@ -55,6 +64,7 @@ jobs:
     with:
       name:            ${{ matrix.name }}
       os:              ${{ matrix.os }}
+      rep:             ${{ matrix.rep }}
       cache:           ${{ matrix.cache || 'none' }}
       linker:          ${{ matrix.linker || 'default' }}
       toolchain:       ${{ matrix.toolchain || 'stable' }}
@@ -70,6 +80,7 @@ jobs:
       features:        ${{ matrix.features || '' }}
       target:          ${{ matrix.target || '' }}
       pnpm_cache:      ${{ matrix.pnpm_cache || 'true' }}
+      change:          ${{ inputs.change }}
       runs:            ${{ inputs.runs }}
       run_id_tag:      ${{ inputs.tag }}
 
@@ -88,7 +99,7 @@ jobs:
         run: |
           node scripts/summarize.mjs artifacts/timings > report.md
           cat report.md >> "$GITHUB_STEP_SUMMARY"
-          mkdir -p out && cp report.md out/ && cp artifacts/timings/*.json out/ || true
+          mkdir -p out && cp report.md out/ && cp artifacts/timings/* out/ || true
       - uses: actions/upload-artifact@v4
         with:
           name: report

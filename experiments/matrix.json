@@ -1,10 +1,11 @@
 {
-  "$comment": "Each entry is one build variant. Every key except `name`, `group` and `os` maps 1:1 to an input of .github/workflows/build.yml. Omitted keys use the workflow defaults. `os` is a list; the dispatcher expands it. `group` lets scripts/run.sh select a whole family (e.g. --only cache).",
+  "$comment": "Each entry is one build variant. Every key except `name`, `group`, `os` and `baseline` maps 1:1 to an input of .github/workflows/build.yml. Omitted keys use the workflow defaults. `os` is a list; the dispatcher expands it. `group` lets scripts/run.sh select a whole family (e.g. --only cache). `baseline` names the experiment the report compares against (default: baseline). Profile experiments use the `big` feature so the app crate is large enough to show a difference; they compare against baseline-big.",
   "defaults": {
     "os": ["ubuntu-24.04", "windows-2022", "macos-14"]
   },
   "experiments": [
     { "name": "baseline",            "group": "baseline", "cache": "none" },
+    { "name": "baseline-big",        "group": "baseline", "cache": "none", "features": "big" },
 
     { "name": "cache-swatinem",      "group": "cache", "cache": "swatinem" },
     { "name": "cache-sccache",       "group": "cache", "cache": "sccache" },
@@ -14,16 +15,16 @@
     { "name": "linker-lld",          "group": "linker", "os": ["ubuntu-24.04", "windows-2022"], "linker": "lld" },
     { "name": "linker-mold",         "group": "linker", "os": ["ubuntu-24.04"], "linker": "mold" },
 
-    { "name": "lto-off",             "group": "profile", "lto": "off" },
-    { "name": "lto-thin",            "group": "profile", "lto": "thin" },
-    { "name": "lto-fat",             "group": "profile", "lto": "fat" },
-    { "name": "cgu-1",               "group": "profile", "codegen_units": "1" },
-    { "name": "cgu-256",             "group": "profile", "codegen_units": "256" },
-    { "name": "opt-1",               "group": "profile", "opt_level": "1" },
-    { "name": "opt-s",               "group": "profile", "opt_level": "s" },
-    { "name": "profile-fast",        "group": "profile", "cargo_profile": "fast" },
-    { "name": "panic-abort",         "group": "profile", "panic": "abort" },
-    { "name": "incremental-on",      "group": "profile", "incremental": "true", "cache": "swatinem" },
+    { "name": "lto-off",             "group": "profile", "features": "big", "baseline": "baseline-big", "lto": "off" },
+    { "name": "lto-thin",            "group": "profile", "features": "big", "baseline": "baseline-big", "lto": "thin" },
+    { "name": "lto-fat",             "group": "profile", "features": "big", "baseline": "baseline-big", "lto": "fat" },
+    { "name": "cgu-1",               "group": "profile", "features": "big", "baseline": "baseline-big", "codegen_units": "1" },
+    { "name": "cgu-256",             "group": "profile", "features": "big", "baseline": "baseline-big", "codegen_units": "256" },
+    { "name": "opt-1",               "group": "profile", "features": "big", "baseline": "baseline-big", "opt_level": "1" },
+    { "name": "opt-s",               "group": "profile", "features": "big", "baseline": "baseline-big", "opt_level": "s" },
+    { "name": "profile-fast",        "group": "profile", "features": "big", "baseline": "baseline-big", "cargo_profile": "fast" },
+    { "name": "panic-abort",         "group": "profile", "features": "big", "baseline": "baseline-big", "panic": "abort" },
+    { "name": "incremental-on",      "group": "profile", "features": "big", "baseline": "baseline-big", "incremental": "true", "cache": "swatinem" },
 
     { "name": "bundle-none",         "group": "bundle", "bundles": "none" },
     { "name": "bundle-deb",          "group": "bundle", "bundles": "deb",  "os": ["ubuntu-24.04"] },

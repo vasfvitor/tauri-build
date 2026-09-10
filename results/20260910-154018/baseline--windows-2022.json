@@ -1,0 +1,17 @@
+{
+  "name": "baseline",
+  "os": "windows-2022",
+  "status": "success",
+  "tag": "20260910-154018",
+  "run_id": "34515763300",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 10,
+    "build_1": 581,
+    "build_2": 0,
+    "job_total": 628
+  },
+  "binary_bytes": 10805248,
+  "bundle_kbytes": 5308
+}

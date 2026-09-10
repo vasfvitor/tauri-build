@@ -18,7 +18,7 @@ Tauri docs.
 | `scripts/plan.mjs`, `record.mjs`, `summarize.mjs` | Matrix expansion, timing record, report generation. |
 | `docs/experiments.md` | What each experiment tests, when the option applies, expected impact. |
 | `docs/tutorial-draft.md` | Skeleton of the guide for the Tauri docs, filled in as results arrive. |
-| `results/` | Downloaded reports, one folder per run tag (git-ignored). |
+| `results/` | Downloaded reports and timing records, one folder per run tag. Committed; only the bulky `cargo-timing.html` files are ignored. |
 | `tools/` | Unrelated to the harness; a patch for a local Claude Code hook. Not watched by CI. |
 
 ## Running experiments
@@ -31,10 +31,11 @@ so dependency versions may differ between variants.
 
 ```bash
 scripts/run.sh                          # every experiment, every OS (about 70 jobs)
-scripts/run.sh --only baseline          # a single experiment on all 3 runners
-scripts/run.sh --only cache --twice     # cache group, run twice: cold then warm
+scripts/run.sh --only baseline --repeat 3          # 3 samples per job, report shows the median
+scripts/run.sh --only cache --twice --change app   # cold run, then warm run after an app-code change
+scripts/run.sh --only cache --twice --change deps  # cold, then warm after a new dependency
 scripts/run.sh --only linker,profile --os ubuntu-24.04
-scripts/run.sh --only baseline --runs 2 # build twice inside the job (warm incremental)
+scripts/run.sh --only baseline --runs 2 # build twice inside the job (in-job rebuild)
 scripts/run.sh --no-wait                # dispatch and return immediately
 ```
 
@@ -49,15 +50,16 @@ are needed unless you need a new knob.
 
 ## Reading the numbers
 
-- **build #1** is the wall time of `pnpm tauri build`: frontend build, cargo,
-  and bundling together. This is the number to compare.
+- **`tauri build`** is the wall time of `pnpm tauri build`. The report splits
+  it into **cargo** (from `--timings`), **frontend**, and **bundling**.
 - **build #2** exists only with `--runs 2`: a second build in the same job
-  after a one-line change to `lib.rs`, so it measures the cost of rebuilding
-  the app crate on a warm `target/`.
+  after a one-line change to `lib.rs`.
 - Cache experiments show no gain on the first run. The first run fills the
-  cache. Use `--twice` and read the second report.
-- Runner times vary by a few percent between runs. Repeat before drawing
-  conclusions from small deltas.
+  cache. Use `--twice` with a `--change` scenario and read the second report.
+- Identical cold builds vary by 15 to 20% between runs. Use `--repeat 3` and
+  the spread column before drawing conclusions from small deltas.
+- Public repositories get 4-core Linux and Windows runners, private ones get
+  2 cores. The report shows the core count next to each runner.
 - Every job also uploads `cargo-timing.html` (from `cargo build --timings`),
   which shows which crates dominate the critical path.
 

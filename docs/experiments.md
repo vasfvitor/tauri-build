@@ -4,6 +4,37 @@ Each section lists the variants in `experiments/matrix.json`, what they
 change, when the option is applicable, and what to expect. "Expected" is a
 hypothesis to confirm or refute with the reports in `results/`.
 
+## Methodology
+
+- **Runners.** Standard GitHub-hosted runners. Public repositories get 4-core
+  Linux and Windows runners; private ones get 2 cores. The report prints the
+  core count per runner, taken from the job itself. Don't mix numbers from
+  the two.
+- **Repetitions.** `scripts/run.sh --repeat 3` runs every job three times in
+  the same workflow run. The report shows the median and the min..max spread.
+  Runner variance is 15 to 20% between identical cold builds, so a single
+  sample can't support a claim below that.
+- **Change scenarios.** A cache is only as good as what changed since it was
+  saved. `--change` selects what the job modifies before building:
+  `none` (nothing, a docs-only commit), `app` (one function appended to
+  `lib.rs`, a normal commit), `deps` (`cargo add chrono`, the lockfile
+  changes). `--twice --change app` runs cold, then warm with the change.
+  The scenario is recorded in every timing JSON.
+- **What is measured.** `tauri build` is the wall time of the whole command.
+  `cargo` is cargo's own total from `--timings`. `frontend` is a separate
+  timed `pnpm build` before the Tauri build. `bundling` is the remainder and
+  includes the overhead of the Tauri command-line tool.
+- **App size.** The app crate of this benchmark compiles in about 50 s on 8
+  cores because of Tauri's monomorphization, independent of app code. The
+  `big` feature adds 150 generated modules (+50%) so profile knobs, which
+  mostly act on the app crate, have something to act on. Profile experiments
+  use it and compare against `baseline-big`.
+- **Isolation.** Each experiment has its own `rust-cache` key, `actions/cache`
+  key and `sccache` namespace (`SCCACHE_GHA_VERSION`), so variants don't feed
+  each other's caches.
+
+## Where the time goes
+
 The build time of a Tauri app in CI splits into five parts. Knowing which part
 an option touches tells you whether it can help at all:
 
@@ -35,12 +66,20 @@ runners at least twice to learn the natural variance.
 first thing to add.
 
 **Expected:** cold run equals baseline plus 10 to 30 s to save the cache.
-Warm run drops the cargo step to under a minute when only app code changed.
-Plain `actions/cache` saves more data than `rust-cache` (no pruning) and hits
-the 10 GB repository cache limit faster. `sccache` alone is slower than
-`rust-cache` warm, because linking and the final crate still run, but it
-degrades gracefully when the lockfile changes. Note the `CARGO_INCREMENTAL=0`
-requirement with `sccache`.
+Warm run with `--change app` drops cargo to roughly the app crate compile
+plus linking. Plain `actions/cache` saves more data than `rust-cache` (no
+pruning) and hits the 10 GB repository cache limit faster. `sccache` alone is
+slower than `rust-cache` warm, because linking and the final crate still run,
+but it should win with `--change deps`, where lockfile-keyed caches miss.
+Note the `CARGO_INCREMENTAL=0` requirement with `sccache`.
+
+**Pilot result (2026-09-10, private repo, 2 cores, `--change none`):**
+`rust-cache` + `sccache` looked 3x better than `rust-cache` alone, but only
+because nothing had changed and `sccache` served the app crate itself from
+cache. With a real commit that crate always recompiles, so the pilot number
+is an artifact. The honest warm figure was `rust-cache` alone, with cargo at
+75 s on Linux, 160 s on Windows and 58 s on macOS, all of it the app crate.
+`sccache` alone was the worst warm option on Linux at 190 s of cargo.
 
 **Caveats:** caches are per-branch with fallback to the default branch, so
 PR builds only benefit if `main` has a cache. The `key` input in the workflow
@@ -66,7 +105,8 @@ current stable toolchain. Check the `rustc` version in the job log.
 ## Group `profile`
 
 All of these set `CARGO_PROFILE_RELEASE_*` environment variables, so the
-source tree stays identical and caches remain comparable. Builds run with
+source tree stays identical and caches remain comparable. They build with
+the `big` feature and compare against `baseline-big`. Builds run with
 `--locked` once `Cargo.lock` is committed, so dependency versions can't
 drift between variants either.
 
@@ -100,6 +140,11 @@ rarely need installers.
 **Expected:** the AppImage is the slowest bundler on Linux by far, DMG on macOS
 adds 20 to 60 s, MSI (WiX) is slow on Windows. `--no-bundle` removes the
 whole stage.
+
+**Pilot result:** frontend plus bundling was stable per platform regardless
+of cache: 85 to 112 s on Linux, 21 to 39 s on Windows, 9 to 14 s on macOS.
+On a warm Linux build that is more than the cargo step, so this group is the
+second most valuable after caching.
 
 ## Group `deps`
 

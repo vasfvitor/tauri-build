@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Patch ~/.claude/hooks/guard_bash.py so the body of a *quoted* heredoc
-(<<'EOF' / <<"EOF" / <<\\EOF) is not scanned as if it were shell commands.
+(<<'EOF' / <<"EOF" / <<\\EOF) fed to `cat` or `tee` is not scanned as if it
+were shell commands.
 
 Why: the guard scans the whole command text, so writing a file with
 `cat > x <<'EOF' ... EOF` is blocked whenever the file *content* contains
-words like `sudo`, `init` or `gh workflow run`. A quoted heredoc is literal
-data (no expansion, no execution), so its body is safe to drop before
-analysis. Unquoted heredocs (<<EOF) keep being scanned because `$(...)`
-expands inside them.
+words like `sudo`, `init` or `gh workflow run`. A quoted heredoc fed to
+`cat` or `tee` is literal data (no expansion, no execution), so its body is
+safe to drop before analysis. Unquoted heredocs (<<EOF) keep being scanned
+because `$(...)` expands inside them, and heredocs fed to anything else
+(`python3 -`, `bash`, `node`, ...) keep being scanned because they run.
 
-Usage:  python3 scripts/fix-guard-heredoc.py [--dry-run] [path/to/guard_bash.py]
+Usage:  python3 tools/fix-guard-heredoc.py [--dry-run] [path/to/guard_bash.py]
 The original is backed up as guard_bash.py.bak-<timestamp> and the fixture
 suite (test_guards.sh) is run afterwards; on failure the backup is restored.
 """
@@ -23,12 +25,15 @@ HELPER = '''
 # Header of a quoted heredoc: <<'EOF', <<"EOF" or <<\\EOF (optionally <<-).
 QUOTED_HEREDOC_HDR_RE = re.compile(
     r"<<-?\\s*(?:'(?P<a>[A-Za-z_][A-Za-z0-9_]*)'|\\"(?P<b>[A-Za-z_][A-Za-z0-9_]*)\\"|\\\\(?P<c>[A-Za-z_][A-Za-z0-9_]*))")
+# Only these consumers turn a heredoc into plain data. Anything else (python3 -,
+# bash, node, eval, ...) may execute the body, so it keeps being scanned.
+HEREDOC_DATA_SINKS = {"cat", "tee"}
 
 
 def strip_quoted_heredocs(cmd):
-    """Drop the body of every quoted heredoc. Quoted heredocs are literal data (no
-    expansion, no execution), so file *contents* must not trip command rules.
-    Unquoted heredocs (<<EOF) are left alone because $(...) expands inside them."""
+    """Drop the body of a quoted heredoc when it is fed to cat/tee: that body is literal
+    data (no expansion, no execution), so file *contents* must not trip command rules.
+    Unquoted heredocs (<<EOF) and heredocs into interpreters are left alone."""
     out, pos = [], 0
     while True:
         m = QUOTED_HEREDOC_HDR_RE.search(cmd, pos)
@@ -42,6 +47,15 @@ def strip_quoted_heredocs(cmd):
         t = term.search(cmd, eol + 1)
         if not t:
             break
+        # Program of the segment that owns this heredoc: text after the last
+        # separator before `<<`, minus env assignments.
+        head = re.split(r"\\|\\||&&|[;|&\\n`]|\\$\\(", cmd[pos:m.start()])[-1]
+        words = [w for w in head.split() if "=" not in w or w.startswith(("-", "<", ">"))]
+        prog = os.path.basename(words[0]) if words else ""
+        if prog not in HEREDOC_DATA_SINKS:
+            out.append(cmd[pos:t.end()])  # keep the body: it may be executed
+            pos = t.end()
+            continue
         out.append(cmd[pos:eol + 1])      # keep everything up to and incl. the header line
         out.append(delim)                 # keep the terminator so the line structure survives
         pos = t.end()
