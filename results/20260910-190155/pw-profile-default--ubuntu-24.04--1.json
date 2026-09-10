@@ -1,0 +1,25 @@
+{
+  "name": "pw-profile-default",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-190155",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34535339759",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 26,
+    "pnpm_install": 2,
+    "frontend": 29,
+    "build_1": 405,
+    "build_2": 0,
+    "cargo_1": 304,
+    "cargo_2": 0,
+    "job_total": 469
+  },
+  "binary_bytes": 34708320,
+  "bundle_kbytes": 418248
+}

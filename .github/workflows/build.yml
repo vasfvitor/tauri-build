@@ -212,7 +212,9 @@ jobs:
       - name: Build the plugin JS packages (plugins-workspace)
         if: inputs.app == 'plugins-api'
         # The example imports the plugins' JS through workspace links, which
-        # resolve to each plugin's dist-js/. Counted as frontend time.
+        # resolve to each plugin's dist-js/. Recorded on its own (js_packages):
+        # `tauri build` reruns only the Vite build, so this must stay out of
+        # the frontend number the bundling estimate subtracts.
         run: |
           t0=$(date +%s)
           pnpm --filter 'api^...' run build
@@ -224,7 +226,7 @@ jobs:
         run: |
           t0=$(date +%s)
           pnpm build
-          echo "T_FRONTEND=$(( $(date +%s) - t0 + ${T_JS:-0} ))" >> "$GITHUB_ENV"
+          echo "T_FRONTEND=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
 
       # ---------- simulate "what changed since the cached build" ----------
       - name: Apply change scenario
@@ -314,7 +316,7 @@ jobs:
             --name "$REC_NAME" --os "$REC_OS" --rep "$REC_REP" --app "$REC_APP" --status "$REC_STATUS" --tag "$REC_TAG" \
             --change "$REC_CHANGE" --features "$REC_FEATURES" --ncpu "${NCPU:-0}" \
             --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
-            --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" --frontend "${T_FRONTEND:-0}" \
+            --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" --js "${T_JS:-0}" --frontend "${T_FRONTEND:-0}" \
             --build1 "${T_BUILD_1:-0}" --build2 "${T_BUILD_2:-0}" \
             --cargo1 "${T_CARGO_1:-0}" --cargo2 "${T_CARGO_2:-0}" \
             --job-total "$(( $(date +%s) - T_JOB_START ))" \

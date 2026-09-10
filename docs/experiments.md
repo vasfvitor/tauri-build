@@ -230,8 +230,10 @@ and `pw-cache-both` should close that gap. The `pw-baseline` vs
 `pw-profile-default` pair shows what the size-optimised profile costs: fat
 LTO with one codegen unit serialises the last step of the build.
 
-**Caveats:** the frontend number includes building the plugins' JS packages
-(`pnpm --filter 'api^...' build`), about 10 s on 8 cores. The workspace
+**Caveats:** the plugins' JS packages have to be built first
+(`pnpm --filter 'api^...' build`, 20 to 30 s on a runner). That time is
+recorded as `js_packages` and counts in the job total, not in `frontend`,
+because `tauri build` reruns only the Vite build. The workspace
 pins pnpm 12.3.4, and the job uses that version for this app. The pin is the
 commit in `build.yml`; bump it deliberately and rerun the group.
 

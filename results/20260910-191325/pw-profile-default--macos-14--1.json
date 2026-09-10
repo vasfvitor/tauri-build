@@ -1,0 +1,25 @@
+{
+  "name": "pw-profile-default",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-191325",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34536345226",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 4,
+    "frontend": 28,
+    "build_1": 252,
+    "build_2": 0,
+    "cargo_1": 237,
+    "cargo_2": 0,
+    "job_total": 296
+  },
+  "binary_bytes": 25711568,
+  "bundle_kbytes": 33952
+}

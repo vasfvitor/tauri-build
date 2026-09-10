@@ -17,6 +17,7 @@ process.stdout.write(JSON.stringify({
   seconds: {
     sysdeps: num("sysdeps"),
     pnpm_install: num("pnpm"),
+    js_packages: num("js"),
     frontend: num("frontend"),
     build_1: num("build1"),
     build_2: num("build2"),

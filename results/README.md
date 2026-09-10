@@ -13,6 +13,8 @@ committed.
 | `20260910-165048` | cache | 4-core | meant to be cold, was warm | nothing | Caches from the pilot were still valid (same keys). Fixed afterwards with per-batch cache salts. |
 | `20260910-165048-warm-app` | cache | 4-core | warm, app code changed | cache comparison | 2 samples each. The first valid warm cache measurement. |
 | `20260910-170743` | cache | 4-core | cold (salted keys) | cold cost of each cache | 2 samples each. One macOS job failed in `bundle_dmg.sh`, unrelated to caching. |
+| `20260910-190155` | pw-profile-default (Linux) | 4-core | cold | pipeline check for the plugins-workspace app | Single sample. `frontend` includes the plugin JS build here (fixed afterwards), so `bundling` reads 20 to 30 s low. |
+| `20260910-191325` | pw-profile-default (Windows, macOS) | 4-core, 3-core | cold | pipeline check | Same caveat: `bundling` shows as `-` because `frontend` swallowed it. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).
