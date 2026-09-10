@@ -6,6 +6,7 @@ process.stdout.write(JSON.stringify({
   name: get("name"),
   os: get("os"),
   rep: num("rep") || 1,
+  app: get("app", "bench"),
   status: get("status"),
   tag: get("tag"),
   change: get("change", "none"),

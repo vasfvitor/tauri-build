@@ -1,0 +1,24 @@
+{
+  "name": "cache-sccache",
+  "os": "windows-2022",
+  "rep": 1,
+  "status": "success",
+  "tag": "20260910-170743",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34524500128",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 7,
+    "frontend": 3,
+    "build_1": 374,
+    "build_2": 0,
+    "cargo_1": 353,
+    "cargo_2": 0,
+    "job_total": 421
+  },
+  "binary_bytes": 10805248,
+  "bundle_kbytes": 5308
+}

@@ -29,6 +29,13 @@ hypothesis to confirm or refute with the reports in `results/`.
   `big` feature adds 150 generated modules (+50%) so profile knobs, which
   mostly act on the app crate, have something to act on. Profile experiments
   use it and compare against `baseline-big`.
+- **Two apps.** The benchmark app in `app/` is small on purpose, so every
+  knob is measured on the same code. The `workspace` group builds the `api`
+  example of `tauri-apps/plugins-workspace` instead, pinned to one commit: a
+  real app with 16 plugins that live as path crates in the same Cargo
+  workspace, 434 crates in the Linux dependency graph, a Svelte frontend, and
+  a size-optimised release profile. It exists to check that the findings
+  survive contact with a monorepo, where the tools behave differently.
 - **Isolation.** Each experiment has its own `rust-cache` key, `actions/cache`
   key and `sccache` namespace (`SCCACHE_GHA_VERSION`), so variants don't feed
   each other's caches. Every batch also mixes a salt (the run tag) into those
@@ -191,6 +198,42 @@ May be unstable; if it fails, that's a result too.
 
 These are the recommended presets the tutorial ends with, so they need
 to be validated together, not only individually.
+
+## Group `workspace`
+
+Builds the `api` example of `tauri-apps/plugins-workspace` (input
+`app: plugins-api`). The example depends on 16 plugins through `path`
+dependencies, so they're workspace members, not registry crates. That's the
+shape of most monorepos and of any app that vendors a plugin.
+
+| Name | Change |
+|---|---|
+| `pw-baseline` | The example as upstream builds it: `lto = true`, `codegen-units = 1`, `opt-level = "s"`, `panic = "abort"`. No cache. |
+| `pw-profile-default` | Same, with cargo's default release profile (no LTO, 16 CGUs, `opt-level = 3`). The reference for the cache variants. |
+| `pw-cache-swatinem` | `rust-cache` with the defaults. |
+| `pw-cache-swatinem-ws` | `rust-cache` with `cache-workspace-crates: true`. |
+| `pw-cache-sccache` | `sccache` only. |
+| `pw-cache-both` | `rust-cache` + `sccache`. |
+| `pw-cache-actions-cargo` | Plain `actions/cache`. |
+
+**Why it's different:** `rust-cache` deletes every workspace crate from
+`target/` before saving, because it assumes they're the code under test.
+In a monorepo that's the 16 plugins, rebuilt on every warm run even though
+they didn't change. `cache-workspace-crates: true` keeps them; `sccache`
+caches them by content hash and doesn't care where they live; plain
+`actions/cache` keeps everything but cargo still rebuilds a path crate when
+its mtime changed, which a fresh checkout guarantees.
+
+**Expected:** `pw-cache-swatinem` warm after `--change app` is well past
+the bench app's floor, because the plugins recompile. `pw-cache-swatinem-ws`
+and `pw-cache-both` should close that gap. The `pw-baseline` vs
+`pw-profile-default` pair shows what the size-optimised profile costs: fat
+LTO with one codegen unit serialises the last step of the build.
+
+**Caveats:** the frontend number includes building the plugins' JS packages
+(`pnpm --filter 'api^...' build`), about 10 s on 8 cores. The workspace
+pins pnpm 12.3.4, and the job uses that version for this app. The pin is the
+commit in `build.yml`; bump it deliberately and rerun the group.
 
 ## Not covered yet
 

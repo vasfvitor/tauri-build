@@ -1,5 +1,5 @@
 {
-  "$comment": "Each entry is one build variant. Every key except `name`, `group`, `os` and `baseline` maps 1:1 to an input of .github/workflows/build.yml. Omitted keys use the workflow defaults. `os` is a list; the dispatcher expands it. `group` lets scripts/run.sh select a whole family (e.g. --only cache). `baseline` names the experiment the report compares against (default: baseline). Profile experiments use the `big` feature so the app crate is large enough to show a difference; they compare against baseline-big.",
+  "$comment": "Each entry is one build variant. Every key except `name`, `group`, `os` and `baseline` maps 1:1 to an input of .github/workflows/build.yml. Omitted keys use the workflow defaults. `os` is a list; the dispatcher expands it. `group` lets scripts/run.sh select a whole family (e.g. --only cache). `baseline` names the experiment the report compares against (default: baseline). Profile experiments use the `big` feature so the app crate is large enough to show a difference; they compare against baseline-big. `app: plugins-api` builds the `api` example of tauri-apps/plugins-workspace instead of the benchmark app; those experiments are prefixed `pw-` and override the workspace's size-optimised release profile (fat LTO, 1 codegen unit, opt-level s) with cargo's defaults, except pw-baseline, which keeps it.",
   "defaults": {
     "os": ["ubuntu-24.04", "windows-2022", "macos-14"]
   },
@@ -40,6 +40,14 @@
 
     { "name": "combo-fastest",       "group": "combo", "cache": "swatinem", "linker": "lld", "codegen_units": "256", "lto": "off", "bundles": "none", "os": ["ubuntu-24.04", "windows-2022"] },
     { "name": "combo-fastest-mac",   "group": "combo", "cache": "swatinem", "codegen_units": "256", "lto": "off", "bundles": "none", "os": ["macos-14"] },
-    { "name": "combo-release",       "group": "combo", "cache": "swatinem+sccache", "linker": "lld", "lto": "thin", "codegen_units": "16", "os": ["ubuntu-24.04", "windows-2022"] }
+    { "name": "combo-release",       "group": "combo", "cache": "swatinem+sccache", "linker": "lld", "lto": "thin", "codegen_units": "16", "os": ["ubuntu-24.04", "windows-2022"] },
+
+    { "name": "pw-baseline",         "group": "workspace", "app": "plugins-api", "cache": "none" },
+    { "name": "pw-profile-default",  "group": "workspace", "app": "plugins-api", "baseline": "pw-baseline", "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" },
+    { "name": "pw-cache-swatinem",   "group": "workspace", "app": "plugins-api", "baseline": "pw-profile-default", "cache": "swatinem",         "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" },
+    { "name": "pw-cache-swatinem-ws","group": "workspace", "app": "plugins-api", "baseline": "pw-profile-default", "cache": "swatinem-ws",      "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" },
+    { "name": "pw-cache-sccache",    "group": "workspace", "app": "plugins-api", "baseline": "pw-profile-default", "cache": "sccache",          "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" },
+    { "name": "pw-cache-both",       "group": "workspace", "app": "plugins-api", "baseline": "pw-profile-default", "cache": "swatinem+sccache", "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" },
+    { "name": "pw-cache-actions-cargo","group": "workspace","app": "plugins-api", "baseline": "pw-profile-default", "cache": "actions-cache",   "lto": "false", "codegen_units": "16", "opt_level": "3", "panic": "unwind" }
   ]
 }

@@ -25,7 +25,12 @@ if (existsSync(matrixPath)) {
   for (const e of JSON.parse(readFileSync(matrixPath, "utf8")).experiments) baselineOf.set(e.name, e.baseline ?? "baseline");
 }
 
-const median = (xs) => { const s = xs.filter((x) => x > 0).sort((a, b) => a - b); return s.length ? s[(s.length - 1) >> 1] : 0; };
+const median = (xs) => {
+  const s = xs.filter((x) => x > 0).sort((a, b) => a - b);
+  if (!s.length) return 0;
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+};
 const fmt = (s) => (s ? `${Math.floor(s / 60)}m${String(Math.round(s % 60)).padStart(2, "0")}s` : "-");
 const mb = (b) => (b ? (b / 1024 / 1024).toFixed(1) : "-");
 const pct = (x, base) => (x && base ? `${(((x - base) / base) * 100).toFixed(0)}%` : "-");
@@ -54,7 +59,8 @@ const agg = (list) => {
 const out = [];
 out.push(`## Build experiments report`);
 out.push(``);
-out.push(`Records: ${rows.length} · run ${rows[0].run_id}${rows[0].tag ? ` · tag \`${rows[0].tag}\`` : ""} · change scenario: \`${rows[0].change ?? "none"}\``);
+const apps = [...new Set(rows.map((r) => r.app ?? "bench"))].sort();
+out.push(`Records: ${rows.length} · run ${rows[0].run_id}${rows[0].tag ? ` · tag \`${rows[0].tag}\`` : ""} · app: \`${apps.join("`, `")}\` · change scenario: \`${rows[0].change ?? "none"}\``);
 out.push(``);
 for (const [os, exps] of [...byOs.entries()].sort()) {
   const aggs = [...exps.values()].map(agg).sort((a, b) => (a.build || 1e9) - (b.build || 1e9));

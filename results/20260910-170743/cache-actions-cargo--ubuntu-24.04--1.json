@@ -1,0 +1,24 @@
+{
+  "name": "cache-actions-cargo",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "status": "success",
+  "tag": "20260910-170743",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34524500128",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 24,
+    "pnpm_install": 2,
+    "frontend": 2,
+    "build_1": 279,
+    "build_2": 0,
+    "cargo_1": 211,
+    "cargo_2": 0,
+    "job_total": 315
+  },
+  "binary_bytes": 10732680,
+  "bundle_kbytes": 347236
+}

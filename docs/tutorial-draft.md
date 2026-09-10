@@ -1,18 +1,20 @@
 # Speed up Tauri builds on GitHub Actions
 
 > Draft for the Tauri docs. Numbers in `[brackets]` are placeholders to fill
-> from `results/`. Keep the structure, replace the guesses.
+> from `docs/findings.md`. The guide states what works, what doesn't, and
+> where each option stops applying; the benchmark repository is a footnote,
+> not the subject.
 
 A release build of a Tauri app compiles several hundred Rust crates, bundles
 a frontend, and produces installers. On a stock GitHub-hosted runner that
 takes `[N]` minutes per platform. This guide shows which settings shorten
 that, how much each one helps, and when to use it.
 
-All numbers come from a small app with three plugins built on
-`ubuntu-24.04`, `windows-2022` and `macos-14`, the standard runners of a
-public repository (4 cores on Linux and Windows, 3 on macOS). Each number is
-the median of three runs. The repository with the harness is at `[link]`.
-Your app is bigger; the ratios transfer better than the absolute times.
+All numbers are medians of repeated builds of a small app with three plugins
+on the standard runners of a public repository: `ubuntu-24.04` and
+`windows-2022` with 4 cores, `macos-14` with 3.[^data] Your app is bigger and
+your runners may be smaller; the ratios transfer better than the absolute
+times.
 
 ## Where the time goes
 
@@ -126,8 +128,8 @@ Add `--timings` to see which crates sit on the critical path:
 tauri build -- --timings
 ```
 
-Upload `target/cargo-timings/cargo-timing.html` as an artifact. The
-experiment harness in `[link]` does this for every job, so you can compare.
+Upload `target/cargo-timings/cargo-timing.html` as an artifact and open it:
+the critical path shows which crates are worth trimming.
 
 ## Recommended presets
 
@@ -152,3 +154,6 @@ experiment harness in `[link]` does this for every job, so you can compare.
 ## What didn't help
 
 Fill in from the results: options whose delta was inside runner variance.
+
+[^data]: Raw timing records, the workflow that produced them, and the
+    reasoning behind each claim are in `[repository link]`.

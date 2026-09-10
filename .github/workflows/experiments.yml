@@ -69,6 +69,8 @@ jobs:
       name:            ${{ matrix.name }}
       os:              ${{ matrix.os }}
       rep:             ${{ matrix.rep }}
+      app:             ${{ matrix.app || 'bench' }}
+      app_ref:         ${{ matrix.app_ref || '' }}
       cache:           ${{ matrix.cache || 'none' }}
       linker:          ${{ matrix.linker || 'default' }}
       toolchain:       ${{ matrix.toolchain || 'stable' }}

@@ -2,13 +2,19 @@ name: build-variant
 
 # Reusable workflow: one Tauri build with every optimisation knob exposed as
 # an input. Called by experiments.yml for each entry of experiments/matrix.json.
+#
+# Two apps can be built: the benchmark app in app/ (default) and the `api`
+# example of tauri-apps/plugins-workspace, a real monorepo where the plugins
+# are path crates of the same Cargo workspace.
 on:
   workflow_call:
     inputs:
       name:            { type: string,  required: true }
       os:              { type: string,  required: true }
       rep:             { type: string,  default: "1" }           # repetition index, only affects artifact naming
-      cache:           { type: string,  default: "none" }        # none | swatinem | sccache | swatinem+sccache | actions-cache
+      app:             { type: string,  default: "bench" }       # bench | plugins-api
+      app_ref:         { type: string,  default: "" }            # plugins-api only: git ref of tauri-apps/plugins-workspace ("" = the commit pinned below)
+      cache:           { type: string,  default: "none" }        # none | swatinem | swatinem-ws | sccache | swatinem+sccache | actions-cache
       linker:          { type: string,  default: "default" }     # default | lld | mold
       toolchain:       { type: string,  default: "stable" }      # stable | nightly | 1.xx
       cargo_profile:   { type: string,  default: "release" }     # release | fast
@@ -39,14 +45,38 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: app
+        # Every step runs inside the app's frontend directory, next to src-tauri/.
+        working-directory: ${{ inputs.app == 'plugins-api' && 'plugins-workspace/examples/api' || 'app' }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start clock
+      - name: Checkout tauri-apps/plugins-workspace
+        if: inputs.app == 'plugins-api'
+        uses: actions/checkout@v4
+        with:
+          repository: tauri-apps/plugins-workspace
+          ref: ${{ inputs.app_ref || '0850317b5c85092cbf4ea9caf4ef3a9c771fcf27' }}
+          path: plugins-workspace
+
+      - name: Start clock, resolve app paths
+        env:
+          IN_APP: ${{ inputs.app }}
         run: |
           echo "T_JOB_START=$(date +%s)" >> "$GITHUB_ENV"
           echo "NCPU=$(nproc 2>/dev/null || sysctl -n hw.ncpu)" >> "$GITHUB_ENV"
+          # Paths relative to the repository root (for the cache actions) and to
+          # the app directory (for the shell steps).
+          case "$IN_APP" in
+            bench)
+              WS_DIR=app/src-tauri; PNPM_ROOT=app; REPO_REL=..; TARGET_REL=src-tauri/target; LOCK_REL=src-tauri/Cargo.lock; BIN_NAME=bench-app ;;
+            plugins-api)
+              WS_DIR=plugins-workspace; PNPM_ROOT=plugins-workspace; REPO_REL=../../..; TARGET_REL=../../target; LOCK_REL=../../Cargo.lock; BIN_NAME=api ;;
+            *) echo "unknown app: $IN_APP" >&2; exit 1 ;;
+          esac
+          {
+            echo "WS_DIR=$WS_DIR"; echo "PNPM_ROOT=$PNPM_ROOT"; echo "REPO_REL=$REPO_REL"
+            echo "TARGET_REL=$TARGET_REL"; echo "LOCK_REL=$LOCK_REL"; echo "BIN_NAME=$BIN_NAME"
+          } >> "$GITHUB_ENV"
 
       # ---------- system deps ----------
       - name: Linux system deps
@@ -92,24 +122,30 @@ jobs:
 
       - name: pnpm
         uses: pnpm/action-setup@v4
-        with: { version: 10 }
+        with:
+          # plugins-workspace pins its pnpm in package.json (packageManager).
+          version: ${{ inputs.app == 'plugins-api' && '12.3.4' || '10' }}
       - name: Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: ${{ inputs.pnpm_cache == 'true' && 'pnpm' || '' }}
-          cache-dependency-path: app/pnpm-lock.yaml
+          cache-dependency-path: ${{ env.PNPM_ROOT }}/pnpm-lock.yaml
 
       # ---------- caches ----------
       - name: Cache (Swatinem/rust-cache)
         if: contains(inputs.cache, 'swatinem')
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: app/src-tauri -> target
+          workspaces: ${{ env.WS_DIR }} -> target
           # Key on the variant so profile/linker changes don't poison each other,
           # and on the salt so a new batch of runs starts from a cold cache.
           key: ${{ inputs.name }}-${{ inputs.target }}-${{ inputs.cache_salt }}
           cache-on-failure: true
+          # By default rust-cache drops every workspace crate from the cache, so
+          # a monorepo like plugins-workspace recompiles all its plugins on every
+          # warm run. `swatinem-ws` keeps them.
+          cache-workspace-crates: ${{ contains(inputs.cache, 'swatinem-ws') }}
 
       - name: Cache (sccache)
         if: contains(inputs.cache, 'sccache')
@@ -133,8 +169,8 @@ jobs:
             ~/.cargo/registry/index
             ~/.cargo/registry/cache
             ~/.cargo/git/db
-            app/src-tauri/target
-          key: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+            ${{ env.WS_DIR }}/target
+          key: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-${{ hashFiles(format('{0}/Cargo.lock', env.WS_DIR)) }}
           restore-keys: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-
 
       # ---------- profile knobs (env beats editing Cargo.toml: source stays identical) ----------
@@ -163,13 +199,24 @@ jobs:
 
       # ---------- frontend ----------
       - name: pnpm install
+        # Inside a pnpm workspace this installs every package of the workspace.
         run: |
           t0=$(date +%s)
           pnpm install --frozen-lockfile
           echo "T_PNPM=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
 
       - name: Generate icons
+        if: inputs.app == 'bench'
         run: pnpm tauri icon src-tauri/app-icon.png
+
+      - name: Build the plugin JS packages (plugins-workspace)
+        if: inputs.app == 'plugins-api'
+        # The example imports the plugins' JS through workspace links, which
+        # resolve to each plugin's dist-js/. Counted as frontend time.
+        run: |
+          t0=$(date +%s)
+          pnpm --filter 'api^...' run build
+          echo "T_JS=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
 
       - name: Frontend build (timed separately)
         # `tauri build` runs `pnpm build` again through beforeBuildCommand; the
@@ -177,7 +224,7 @@ jobs:
         run: |
           t0=$(date +%s)
           pnpm build
-          echo "T_FRONTEND=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
+          echo "T_FRONTEND=$(( $(date +%s) - t0 + ${T_JS:-0} ))" >> "$GITHUB_ENV"
 
       # ---------- simulate "what changed since the cached build" ----------
       - name: Apply change scenario
@@ -216,10 +263,10 @@ jobs:
             *)    ARGS+=(--bundles "$IN_BUNDLES") ;;
           esac
           CARGO_ARGS=(--timings)
-          [ -f src-tauri/Cargo.lock ] && CARGO_ARGS+=(--locked)
+          [ -f "$LOCK_REL" ] && CARGO_ARGS+=(--locked)
           [ "$IN_PROFILE" != "release" ] && CARGO_ARGS+=(--profile "$IN_PROFILE")
 
-          mkdir -p ../timings
+          mkdir -p "$REPO_REL/timings"
           for i in $(seq 1 "$IN_RUNS"); do
             if [ "$i" -gt 1 ]; then
               # Touch app code so build #i measures an app-crate rebuild, not a
@@ -230,9 +277,9 @@ jobs:
             pnpm tauri build "${ARGS[@]}" -- "${CARGO_ARGS[@]}"
             echo "T_BUILD_$i=$(( $(date +%s) - t0 ))" >> "$GITHUB_ENV"
             # cargo's own wall time, from the --timings report
-            HTML=$(ls src-tauri/target/cargo-timings/cargo-timing.html 2>/dev/null || true)
+            HTML=$(ls "$TARGET_REL/cargo-timings/cargo-timing.html" 2>/dev/null || true)
             if [ -n "$HTML" ]; then
-              cp "$HTML" "../timings/${{ inputs.name }}--${{ inputs.os }}--${{ inputs.rep }}.run$i.cargo-timing.html"
+              cp "$HTML" "$REPO_REL/timings/${{ inputs.name }}--${{ inputs.os }}--${{ inputs.rep }}.run$i.cargo-timing.html"
               echo "T_CARGO_$i=$(grep -o 'Total time:</td><td>[0-9.]*' "$HTML" | head -1 | sed 's/.*<td>//; s/\..*//')" >> "$GITHUB_ENV"
             fi
           done
@@ -248,6 +295,7 @@ jobs:
           REC_NAME: ${{ inputs.name }}
           REC_OS: ${{ inputs.os }}
           REC_REP: ${{ inputs.rep }}
+          REC_APP: ${{ inputs.app }}
           REC_STATUS: ${{ steps.build.outcome }}
           REC_TAG: ${{ inputs.run_id_tag }}
           REC_CHANGE: ${{ inputs.change }}
@@ -255,14 +303,15 @@ jobs:
           IN_TARGET: ${{ inputs.target }}
           IN_PROFILE: ${{ inputs.cargo_profile }}
         run: |
-          mkdir -p ../timings
-          TARGET_DIR="src-tauri/target${IN_TARGET:+/$IN_TARGET}/$IN_PROFILE"
-          BIN=$(ls "$TARGET_DIR"/bench-app* 2>/dev/null | grep -vE '\.d$|\.pdb$' | head -1 || true)
+          mkdir -p "$REPO_REL/timings"
+          TARGET_DIR="$TARGET_REL${IN_TARGET:+/$IN_TARGET}/$IN_PROFILE"
+          BIN=""
+          for f in "$TARGET_DIR/$BIN_NAME" "$TARGET_DIR/$BIN_NAME.exe"; do [ -f "$f" ] && BIN="$f"; done
           BIN_SIZE=$( [ -n "$BIN" ] && wc -c < "$BIN" || echo 0 )
           BUNDLE_SIZE=$( [ -d "$TARGET_DIR/bundle" ] && du -sk "$TARGET_DIR/bundle" | cut -f1 || echo 0 )
-          OUT="../timings/${REC_NAME}--${REC_OS}--${REC_REP}.json"
-          node ../scripts/record.mjs \
-            --name "$REC_NAME" --os "$REC_OS" --rep "$REC_REP" --status "$REC_STATUS" --tag "$REC_TAG" \
+          OUT="$REPO_REL/timings/${REC_NAME}--${REC_OS}--${REC_REP}.json"
+          node "$REPO_REL/scripts/record.mjs" \
+            --name "$REC_NAME" --os "$REC_OS" --rep "$REC_REP" --app "$REC_APP" --status "$REC_STATUS" --tag "$REC_TAG" \
             --change "$REC_CHANGE" --features "$REC_FEATURES" --ncpu "${NCPU:-0}" \
             --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
             --sysdeps "${T_SYSDEPS:-0}" --pnpm "${T_PNPM:-0}" --frontend "${T_FRONTEND:-0}" \
@@ -281,5 +330,6 @@ jobs:
           path: |
             timings/
             app/src-tauri/Cargo.lock
+            plugins-workspace/Cargo.lock
           if-no-files-found: warn
           retention-days: 30

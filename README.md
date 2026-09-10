@@ -10,6 +10,7 @@ Tauri docs.
 | Path | What |
 |---|---|
 | `app/` | The benchmark app, a Vite + TypeScript frontend and a Rust backend with 3 plugins and an optional `heavy` feature (`reqwest` + `tokio`). |
+| (`plugins-workspace/`) | Not in this repo. The `workspace` experiments check out `tauri-apps/plugins-workspace` at a pinned commit and build its `api` example, a real monorepo app with 16 path-dependency plugins. |
 | `experiments/matrix.json` | The list of build variants. One entry = one experiment; each key maps to an input of the build workflow. |
 | `.github/workflows/build.yml` | Reusable workflow that runs **one** build and records timings. Every optimization is an input. |
 | `.github/workflows/experiments.yml` | Dispatcher: expands the matrix, fans out builds, aggregates a Markdown report. |
@@ -17,7 +18,8 @@ Tauri docs.
 | `scripts/run.sh` | Drive everything from the terminal with `gh`. No clicking in the Actions UI. |
 | `scripts/plan.mjs`, `record.mjs`, `summarize.mjs` | Matrix expansion, timing record, report generation. |
 | `docs/experiments.md` | What each experiment tests, when the option applies, expected impact. |
-| `docs/tutorial-draft.md` | Skeleton of the guide for the Tauri docs, filled in as results arrive. |
+| `docs/findings.md` | The evidence ledger: one entry per claim, with numbers, confidence, and limits. Source of truth for the guide. |
+| `docs/tutorial-draft.md` | Skeleton of the guide for the Tauri docs, filled in from the findings. |
 | `results/` | Downloaded reports and timing records, one folder per run tag. Committed; only the bulky `cargo-timing.html` files are ignored. |
 | `tools/` | Unrelated to the harness; a patch for a local Claude Code hook. Not watched by CI. |
 
@@ -36,6 +38,7 @@ scripts/run.sh --only cache --twice --change app   # cold run, then warm run aft
 scripts/run.sh --only cache --twice --change deps  # cold, then warm after a new dependency
 scripts/run.sh --only linker,profile --os ubuntu-24.04
 scripts/run.sh --only baseline --runs 2 # build twice inside the job (in-job rebuild)
+scripts/run.sh --only workspace --twice --change app   # same, on the plugins-workspace example app
 scripts/run.sh --no-wait                # dispatch and return immediately
 ```
 
@@ -45,7 +48,7 @@ report also shows up in the run's job summary.
 
 Selection accepts experiment names (`cache-swatinem`) or group names
 (`cache`, `linker`, `profile`, `bundle`, `deps`, `frontend`, `toolchain`,
-`combo`). Edit `experiments/matrix.json` to add a variant. No workflow changes
+`combo`, `workspace`). Edit `experiments/matrix.json` to add a variant. No workflow changes
 are needed unless you need a new knob.
 
 ## Reading the numbers

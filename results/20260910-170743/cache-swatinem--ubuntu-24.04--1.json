@@ -1,0 +1,24 @@
+{
+  "name": "cache-swatinem",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "status": "success",
+  "tag": "20260910-170743",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34524500128",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 44,
+    "pnpm_install": 1,
+    "frontend": 1,
+    "build_1": 240,
+    "build_2": 0,
+    "cargo_1": 152,
+    "cargo_2": 0,
+    "job_total": 296
+  },
+  "binary_bytes": 10732680,
+  "bundle_kbytes": 347236
+}
