@@ -24,6 +24,7 @@ on:
       target:          { type: string,  default: "" }            # e.g. aarch64-apple-darwin
       pnpm_cache:      { type: string,  default: "true" }
       change:          { type: string,  default: "none" }        # none | app | deps : what "changed since the last build" (applied before building)
+      cache_salt:      { type: string,  default: "" }            # mixed into every cache key; a fresh value makes the run truly cold
       runs:            { type: string,  default: "1" }           # build N times in the same job (run 2+ touches app code first)
       run_id_tag:      { type: string,  default: "" }            # free text that ends up in the timing JSON
 
@@ -105,8 +106,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri -> target
-          # Key on the variant so profile/linker changes don't poison each other.
-          key: ${{ inputs.name }}-${{ inputs.target }}
+          # Key on the variant so profile/linker changes don't poison each other,
+          # and on the salt so a new batch of runs starts from a cold cache.
+          key: ${{ inputs.name }}-${{ inputs.target }}-${{ inputs.cache_salt }}
           cache-on-failure: true
 
       - name: Cache (sccache)
@@ -119,7 +121,7 @@ jobs:
           echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
           # Namespace the sccache entries per experiment; the GHA backend is
           # otherwise shared by every job in the repository.
-          echo "SCCACHE_GHA_VERSION=${{ inputs.name }}" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_VERSION=${{ inputs.name }}-${{ inputs.cache_salt }}" >> "$GITHUB_ENV"
           # sccache cannot cache incremental artifacts
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
 
@@ -132,8 +134,8 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             app/src-tauri/target
-          key: ${{ runner.os }}-${{ inputs.name }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-${{ inputs.name }}-
+          key: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-
 
       # ---------- profile knobs (env beats editing Cargo.toml: source stays identical) ----------
       - name: Export profile overrides

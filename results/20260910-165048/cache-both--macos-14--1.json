@@ -1,0 +1,24 @@
+{
+  "name": "cache-both",
+  "os": "macos-14",
+  "rep": 1,
+  "status": "success",
+  "tag": "20260910-165048",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34522807851",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "frontend": 1,
+    "build_1": 85,
+    "build_2": 0,
+    "cargo_1": 75,
+    "cargo_2": 0,
+    "job_total": 119
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 10392
+}

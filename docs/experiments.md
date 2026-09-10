@@ -31,7 +31,11 @@ hypothesis to confirm or refute with the reports in `results/`.
   use it and compare against `baseline-big`.
 - **Isolation.** Each experiment has its own `rust-cache` key, `actions/cache`
   key and `sccache` namespace (`SCCACHE_GHA_VERSION`), so variants don't feed
-  each other's caches.
+  each other's caches. Every batch also mixes a salt (the run tag) into those
+  keys, so the first run of a batch is cold even if an earlier batch left
+  caches behind. `--twice` reuses the salt for its second run. Caches from
+  the private-repo pilot leaked into the first public batch this way; that
+  batch is kept only for its warm numbers.
 
 ## Where the time goes
 

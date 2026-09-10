@@ -9,12 +9,16 @@
 #   scripts/run.sh --only cache --twice --change app   # warm run rebuilds after an app-code change
 #   scripts/run.sh --only cache --twice --change deps  # warm run after a new dependency (lockfile changed)
 #   scripts/run.sh --only baseline --runs 2 # build twice inside the job (in-job warm rebuild)
+#   scripts/run.sh --only cache --cache-salt 20260910-165048   # reuse the caches of an earlier batch
 #   scripts/run.sh --no-wait                # just dispatch and print the run URL
+#
+# Every batch gets a fresh cache salt (the tag), so the first run of a batch
+# is always cold. --twice reuses the salt for the second run so it is warm.
 # --- end of usage ---
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ONLY="" OS="" RUNS="1" REPEAT="1" CHANGE="" TAG="" WAIT=1 TWICE=0 REF="${REF:-}"
+ONLY="" OS="" RUNS="1" REPEAT="1" CHANGE="" TAG="" SALT="" WAIT=1 TWICE=0 REF="${REF:-}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --only)   ONLY="$2";   shift 2 ;;
@@ -23,6 +27,7 @@ while [ $# -gt 0 ]; do
     --repeat) REPEAT="$2"; shift 2 ;;
     --change) CHANGE="$2"; shift 2 ;;
     --tag)    TAG="$2";    shift 2 ;;
+    --cache-salt) SALT="$2"; shift 2 ;;
     --ref)    REF="$2";    shift 2 ;;
     --twice)  TWICE=1; shift ;;
     --no-wait) WAIT=0; shift ;;
@@ -31,6 +36,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 TAG="${TAG:-$(date +%Y%m%d-%H%M%S)}"
+SALT="${SALT:-$TAG}"
 REF="${REF:-$(git rev-parse --abbrev-ref HEAD)}"
 
 # Find the run created by our dispatch: poll for a run newer than the
@@ -51,9 +57,10 @@ find_run() {
 dispatch_and_wait() {
   local tag="$1" change="$2" since run_id dest
   since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-  echo ">> dispatching experiments (only='$ONLY' os='$OS' runs=$RUNS repeat=$REPEAT change=$change tag=$tag ref=$REF)"
+  echo ">> dispatching experiments (only='$ONLY' os='$OS' runs=$RUNS repeat=$REPEAT change=$change salt=$SALT tag=$tag ref=$REF)"
   gh workflow run experiments.yml --ref "$REF" \
-    -f only="$ONLY" -f os="$OS" -f runs="$RUNS" -f repeat="$REPEAT" -f change="$change" -f tag="$tag"
+    -f only="$ONLY" -f os="$OS" -f runs="$RUNS" -f repeat="$REPEAT" -f change="$change" \
+    -f cache_salt="$SALT" -f tag="$tag"
   run_id=$(find_run "$since")
   echo ">> run $run_id: $(gh run view "$run_id" --json url -q .url)"
   [ "$WAIT" = 1 ] || return 0

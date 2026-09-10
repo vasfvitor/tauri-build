@@ -28,6 +28,10 @@ on:
         description: "What changed since the cached build: none | app | deps"
         type: string
         default: "none"
+      cache_salt:
+        description: "Mixed into every cache key; use a new value to start from cold caches, reuse one to hit them"
+        type: string
+        default: ""
       tag:
         description: "Free label stored in every timing record"
         type: string
@@ -81,6 +85,7 @@ jobs:
       target:          ${{ matrix.target || '' }}
       pnpm_cache:      ${{ matrix.pnpm_cache || 'true' }}
       change:          ${{ inputs.change }}
+      cache_salt:      ${{ inputs.cache_salt }}
       runs:            ${{ inputs.runs }}
       run_id_tag:      ${{ inputs.tag }}
 
