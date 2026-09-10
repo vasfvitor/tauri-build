@@ -1,0 +1,24 @@
+{
+  "name": "baseline-big",
+  "os": "macos-14",
+  "rep": 3,
+  "status": "success",
+  "tag": "20260910-164108",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34521868408",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 1,
+    "frontend": 1,
+    "build_1": 187,
+    "build_2": 0,
+    "cargo_1": 172,
+    "cargo_2": 0,
+    "job_total": 202
+  },
+  "binary_bytes": 7589872,
+  "bundle_kbytes": 10416
+}
