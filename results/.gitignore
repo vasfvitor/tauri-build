@@ -1,2 +1,2 @@
-*/timings/*.html
-*/raw/
+*.cargo-timing.html
+raw/
