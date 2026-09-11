@@ -1,0 +1,26 @@
+{
+  "name": "bundle-nsis",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260910-235250",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34556311587",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 8,
+    "js_packages": 0,
+    "frontend": 4,
+    "build_1": 346,
+    "build_2": 0,
+    "cargo_1": 330,
+    "cargo_2": 0,
+    "job_total": 393
+  },
+  "binary_bytes": 10805248,
+  "bundle_kbytes": 2104
+}

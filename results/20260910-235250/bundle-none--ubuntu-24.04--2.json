@@ -1,0 +1,26 @@
+{
+  "name": "bundle-none",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260910-235250",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34556311587",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 23,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 225,
+    "build_2": 0,
+    "cargo_1": 220,
+    "cargo_2": 0,
+    "job_total": 264
+  },
+  "binary_bytes": 10732680,
+  "bundle_kbytes": 0
+}

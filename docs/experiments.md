@@ -157,6 +157,10 @@ of cache: 85 to 112 s on Linux, 21 to 39 s on Windows, 9 to 14 s on macOS.
 On a warm Linux build that is more than the cargo step, so this group is the
 second most valuable after caching.
 
+**Measured** (batch `20260910-235250`): `--bundles deb` or `--no-bundle`
+removes 1m14s from a Linux build; NSIS-only saves 6 s on Windows and
+`.app`-only 10 s on macOS. See the findings ledger.
+
 ## Group `deps`
 
 | Name | Change |

@@ -1,0 +1,26 @@
+{
+  "name": "bundle-none",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260910-235250",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34556311587",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 130,
+    "build_2": 0,
+    "cargo_1": 128,
+    "cargo_2": 0,
+    "job_total": 145
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 0
+}

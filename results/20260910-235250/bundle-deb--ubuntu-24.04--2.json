@@ -1,0 +1,26 @@
+{
+  "name": "bundle-deb",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260910-235250",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34556311587",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 31,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 235,
+    "build_2": 0,
+    "cargo_1": 230,
+    "cargo_2": 0,
+    "job_total": 277
+  },
+  "binary_bytes": 10732680,
+  "bundle_kbytes": 18108
+}

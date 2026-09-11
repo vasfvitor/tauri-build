@@ -19,6 +19,7 @@ committed.
 | `20260910-194307-warm-app` | workspace | 4-core, 3-core | warm, app code changed | cache comparison on a monorepo, except `pw-cache-swatinem` on Windows (nothing to restore) and the `sccache` rows (partial cache) | 2 samples each. One Windows `pw-baseline` job failed in the Vite build (UnoCSS timed out fetching web fonts), one macOS `pw-baseline` job built fine but lost its record to an artifact upload timeout. |
 | `20260910-214104` | pw-cache-swatinem (Windows) | 4-core | cold (salted, per-repetition keys) | cold cost of `rust-cache` on the monorepo | 2 samples. Rerun of the cell whose save the rate limit dropped; both saves went through this time. |
 | `20260910-214104-warm-app` | pw-cache-swatinem (Windows) | 4-core | warm, app code changed | the Windows `rust-cache` cell of the `workspace` group | 2 samples, 4 jobs in total. |
+| `20260910-235250` | bundle | 4-core, 3-core | cold, no cache | cost of each bundler, against the all-bundles baseline in `20260910-164108` | 2 samples each, 12 jobs. macOS compile varied 2m19s to 3m13s between identical jobs. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).

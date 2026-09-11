@@ -38,8 +38,9 @@ Limit: a single-sample delta below 20% means nothing on Windows. Every
 claim below is a median of at least 2 samples.
 
 macOS can be worse: two `pw-baseline` jobs with identical settings in the
-same run built in 3m33s and about 5m02s. Batch `20260910-194307-warm-app`.
-A macOS delta under 40% needs 3 samples or more.
+same run built in 3m33s and about 5m02s (batch `20260910-194307-warm-app`),
+and two `bundle-app` jobs compiled in 2m19s and 3m13s (batch
+`20260910-235250`). A macOS delta under 40% needs 3 samples or more.
 
 ### Where a cold build spends its time (4 cores)
 
@@ -163,7 +164,44 @@ bundling is 16 to 33 s, macOS 7 to 12 s. Confidence: high (consistent across
 12 jobs). Batches `20260910-164108`, `20260910-165048-warm-app`.
 
 Implication: for pull request checks, `--no-bundle` or `--bundles deb` is
-worth more than any compiler flag. The `bundle` group quantifies it.
+worth more than any compiler flag. The next two entries quantify it.
+
+### Skipping AppImage and rpm saves 1m14s per Linux build
+
+Cold, no cache, median of 2 per cell, against the all-bundles baseline of
+batch `20260910-164108`:
+
+| Linux | `tauri build` | bundling | bundle dir |
+|---|---:|---:|---:|
+| all bundles (deb, rpm, AppImage) | 5m03s | 1m18s | 339 MB |
+| `--bundles deb` | 3m25s | 4 s | 17.7 MB |
+| `--no-bundle` | 3m24s | 2 s | - |
+
+The 2 to 4 s left is the overhead of the Tauri command itself, which the
+bundling column absorbs. Confidence: high for the bundling stage (1m07s to 1m20s in every
+Linux job of four batches, 2 to 4 s without AppImage and rpm); medium for
+the wall time, since cargo itself moved from 3m43s to 3m20s between the two
+batches.
+
+### Windows and macOS bundlers are cheap; the DMG is the risky one
+
+| | all bundles | single bundler | `--no-bundle` |
+|---|---:|---:|---:|
+| Windows bundling (NSIS + MSI, NSIS only) | 17 s | 11 s | 6 s |
+| macOS bundling (`.app` + DMG, `.app` only) | 12 s | 2 s | 2 s |
+
+WiX costs about 6 s on top of NSIS, the DMG about 10 s on top of the `.app`.
+Neither is worth dropping for time alone; the DMG is worth dropping from
+pull request builds because it's the step that flakes (see Reliability).
+Confidence: medium (deltas near the Windows spread; macOS compile varied
+2m19s to 3m13s between identical jobs in this batch). Batch
+`20260910-235250`.
+
+Implication: a pull request workflow should run `tauri build --no-bundle`
+(or `--bundles deb` when a Linux package is needed for tests) and leave
+AppImage, rpm, DMG, and MSI to the release workflow. On Linux that's worth
+more than any cache on a warm build and about 30% of a cold one. It also
+shrinks the artifact from 339 MB to 18 MB.
 
 ## Reliability
 
@@ -294,7 +332,7 @@ bench app. Confidence: high (42 jobs).
 ## Not yet measured
 
 - `deps` change scenario for caches.
-- `bundle`, `linker`, `profile`, `deps`, `toolchain`, `combo` groups.
+- `linker`, `profile`, `deps`, `toolchain`, `combo` groups.
 - In-job rebuild (`--runs 2`).
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6

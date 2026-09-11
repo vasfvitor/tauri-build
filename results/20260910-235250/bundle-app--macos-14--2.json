@@ -1,0 +1,26 @@
+{
+  "name": "bundle-app",
+  "os": "macos-14",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260910-235250",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34556311587",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 165,
+    "build_2": 0,
+    "cargo_1": 161,
+    "cargo_2": 0,
+    "job_total": 187
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 7516
+}
