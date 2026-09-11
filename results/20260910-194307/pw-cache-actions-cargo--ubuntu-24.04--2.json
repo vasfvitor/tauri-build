@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-actions-cargo",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34538813689",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 23,
+    "pnpm_install": 3,
+    "js_packages": 25,
+    "frontend": 4,
+    "build_1": 402,
+    "build_2": 0,
+    "cargo_1": 300,
+    "cargo_2": 0,
+    "job_total": 462
+  },
+  "binary_bytes": 34708456,
+  "bundle_kbytes": 418244
+}

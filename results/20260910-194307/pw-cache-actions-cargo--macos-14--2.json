@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-actions-cargo",
+  "os": "macos-14",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34538813689",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 18,
+    "frontend": 5,
+    "build_1": 295,
+    "build_2": 0,
+    "cargo_1": 280,
+    "cargo_2": 0,
+    "job_total": 337
+  },
+  "binary_bytes": 25711568,
+  "bundle_kbytes": 33952
+}

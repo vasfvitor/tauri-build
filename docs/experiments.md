@@ -237,6 +237,14 @@ because `tauri build` reruns only the Vite build. The workspace
 pins pnpm 12.3.4, and the job uses that version for this app. The pin is the
 commit in `build.yml`; bump it deliberately and rerun the group.
 
+Every experiment and repetition gets its own cache key (the `-r<rep>`
+suffix). Two Windows repeats of `pw-cache-swatinem` once tried to save the
+same key in the same second, GitHub answered both with a rate limit, and the
+warm run had nothing to restore. The same rate limit truncates the
+per-object writes of `sccache` when many jobs run at once, so `--repeat`
+and a full-matrix batch make the `sccache` rows pessimistic. The findings
+ledger has the counts.
+
 ## Not covered yet
 
 Ideas for a second round, each needs a new workflow input:

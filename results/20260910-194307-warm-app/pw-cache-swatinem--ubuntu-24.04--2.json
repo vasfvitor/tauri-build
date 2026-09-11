@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-swatinem",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 45,
+    "pnpm_install": 2,
+    "js_packages": 19,
+    "frontend": 3,
+    "build_1": 197,
+    "build_2": 0,
+    "cargo_1": 61,
+    "cargo_2": 0,
+    "job_total": 286
+  },
+  "binary_bytes": 34708456,
+  "bundle_kbytes": 418244
+}

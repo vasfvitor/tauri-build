@@ -1,0 +1,26 @@
+{
+  "name": "pw-baseline",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 22,
+    "pnpm_install": 2,
+    "js_packages": 19,
+    "frontend": 3,
+    "build_1": 356,
+    "build_2": 0,
+    "cargo_1": 270,
+    "cargo_2": 0,
+    "job_total": 407
+  },
+  "binary_bytes": 14029128,
+  "bundle_kbytes": 359376
+}

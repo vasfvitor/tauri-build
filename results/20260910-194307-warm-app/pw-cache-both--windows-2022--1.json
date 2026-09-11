@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-both",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 26,
+    "frontend": 41,
+    "build_1": 260,
+    "build_2": 0,
+    "cargo_1": 218,
+    "cargo_2": 0,
+    "job_total": 443
+  },
+  "binary_bytes": 21929984,
+  "bundle_kbytes": 36712
+}

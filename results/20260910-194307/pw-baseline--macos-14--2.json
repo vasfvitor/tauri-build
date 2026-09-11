@@ -1,0 +1,26 @@
+{
+  "name": "pw-baseline",
+  "os": "macos-14",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34538813689",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 20,
+    "frontend": 4,
+    "build_1": 357,
+    "build_2": 0,
+    "cargo_1": 342,
+    "cargo_2": 0,
+    "job_total": 405
+  },
+  "binary_bytes": 10710320,
+  "bundle_kbytes": 15696
+}

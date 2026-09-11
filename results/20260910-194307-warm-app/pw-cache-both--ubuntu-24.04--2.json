@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-both",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 22,
+    "pnpm_install": 2,
+    "js_packages": 26,
+    "frontend": 4,
+    "build_1": 192,
+    "build_2": 0,
+    "cargo_1": 88,
+    "cargo_2": 0,
+    "job_total": 266
+  },
+  "binary_bytes": 34708456,
+  "bundle_kbytes": 418244
+}

@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-swatinem-ws",
+  "os": "macos-14",
+  "rep": 2,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 17,
+    "frontend": 4,
+    "build_1": 80,
+    "build_2": 0,
+    "cargo_1": 65,
+    "cargo_2": 0,
+    "job_total": 133
+  },
+  "binary_bytes": 25711568,
+  "bundle_kbytes": 33952
+}

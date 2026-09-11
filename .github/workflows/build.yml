@@ -11,7 +11,7 @@ on:
     inputs:
       name:            { type: string,  required: true }
       os:              { type: string,  required: true }
-      rep:             { type: string,  default: "1" }           # repetition index, only affects artifact naming
+      rep:             { type: string,  default: "1" }           # repetition index; also part of every cache key, so repeats never share or clobber a cache
       app:             { type: string,  default: "bench" }       # bench | plugins-api
       app_ref:         { type: string,  default: "" }            # plugins-api only: git ref of tauri-apps/plugins-workspace ("" = the commit pinned below)
       cache:           { type: string,  default: "none" }        # none | swatinem | swatinem-ws | sccache | swatinem+sccache | actions-cache
@@ -140,7 +140,7 @@ jobs:
           workspaces: ${{ env.WS_DIR }} -> target
           # Key on the variant so profile/linker changes don't poison each other,
           # and on the salt so a new batch of runs starts from a cold cache.
-          key: ${{ inputs.name }}-${{ inputs.target }}-${{ inputs.cache_salt }}
+          key: ${{ inputs.name }}-${{ inputs.target }}-${{ inputs.cache_salt }}-r${{ inputs.rep }}
           cache-on-failure: true
           # By default rust-cache drops every workspace crate from the cache, so
           # a monorepo like plugins-workspace recompiles all its plugins on every
@@ -157,7 +157,7 @@ jobs:
           echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
           # Namespace the sccache entries per experiment; the GHA backend is
           # otherwise shared by every job in the repository.
-          echo "SCCACHE_GHA_VERSION=${{ inputs.name }}-${{ inputs.cache_salt }}" >> "$GITHUB_ENV"
+          echo "SCCACHE_GHA_VERSION=${{ inputs.name }}-${{ inputs.cache_salt }}-r${{ inputs.rep }}" >> "$GITHUB_ENV"
           # sccache cannot cache incremental artifacts
           echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
 
@@ -170,8 +170,8 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             ${{ env.WS_DIR }}/target
-          key: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-${{ hashFiles(format('{0}/Cargo.lock', env.WS_DIR)) }}
-          restore-keys: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-
+          key: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-r${{ inputs.rep }}-${{ hashFiles(format('{0}/Cargo.lock', env.WS_DIR)) }}
+          restore-keys: ${{ runner.os }}-${{ inputs.name }}-${{ inputs.cache_salt }}-r${{ inputs.rep }}-
 
       # ---------- profile knobs (env beats editing Cargo.toml: source stays identical) ----------
       - name: Export profile overrides

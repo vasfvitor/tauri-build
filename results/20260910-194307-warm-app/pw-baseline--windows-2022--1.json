@@ -1,0 +1,26 @@
+{
+  "name": "pw-baseline",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34540571980",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 31,
+    "frontend": 12,
+    "build_1": 564,
+    "build_2": 0,
+    "cargo_1": 527,
+    "cargo_2": 0,
+    "job_total": 663
+  },
+  "binary_bytes": 8500736,
+  "bundle_kbytes": 16868
+}

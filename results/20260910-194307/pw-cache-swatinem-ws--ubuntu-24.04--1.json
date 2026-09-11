@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-swatinem-ws",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34538813689",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 20,
+    "pnpm_install": 2,
+    "js_packages": 24,
+    "frontend": 4,
+    "build_1": 395,
+    "build_2": 0,
+    "cargo_1": 296,
+    "cargo_2": 0,
+    "job_total": 451
+  },
+  "binary_bytes": 34708456,
+  "bundle_kbytes": 418244
+}

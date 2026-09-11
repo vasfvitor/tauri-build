@@ -1,0 +1,26 @@
+{
+  "name": "pw-baseline",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-194307",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34538813689",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 3,
+    "js_packages": 30,
+    "frontend": 13,
+    "build_1": 562,
+    "build_2": 0,
+    "cargo_1": 524,
+    "cargo_2": 0,
+    "job_total": 675
+  },
+  "binary_bytes": 8500736,
+  "bundle_kbytes": 16868
+}
