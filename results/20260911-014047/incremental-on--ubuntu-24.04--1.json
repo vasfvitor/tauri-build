@@ -1,0 +1,26 @@
+{
+  "name": "incremental-on",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-014047",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34563099217",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 23,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 316,
+    "build_2": 62,
+    "cargo_1": 239,
+    "cargo_2": 3,
+    "job_total": 414
+  },
+  "binary_bytes": 11078536,
+  "bundle_kbytes": 348040
+}

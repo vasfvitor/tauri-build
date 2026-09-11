@@ -153,6 +153,49 @@ After a change, cargo's remaining work is the app crate plus linking: 45 to
 generic runtime is monomorphized into that crate, so even a tiny app pays
 around 50 s of it on 8 local cores. Confidence: medium.
 
+## In-job rebuilds
+
+Batch `20260911-014047`: cold build, then a second `tauri build` in the same
+job after a comment is appended to `lib.rs`, 2 samples per cell. The
+`build #2` column of the report includes bundling; the numbers here are
+cargo's own time for the second build.
+
+### Rebuilding the app crate costs 43 s on Linux and 90 s on Windows
+
+| cargo, second build | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| `baseline` | 43 s | 91 to 94 s | 43 to 58 s |
+| `baseline-big` (150 extra modules) | 58 to 76 s | 115 to 138 s | 89 to 111 s |
+| `linker-mold` | 43 to 45 s | - | - |
+
+That's the same floor the warm cache runs showed (45 to 58 s on Linux, 1m45s
+to 2m08s on Windows with linking and bundling), measured without any cache
+in the way: the app crate recompiles from scratch whenever a line changes,
+because the release profile is not incremental. `mold` didn't move it, so
+the floor is codegen, not linking. Confidence: high (matches four other
+batches). Whole second `tauri build` including bundling: 1m41s to 1m46s on
+Linux, 1m43s to 1m46s on Windows, 53 s to 1m09s on macOS.
+
+### Incremental compilation cuts the rebuild to 3 to 8 s, in the best case
+
+| cargo, second build | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| `baseline` | 43 s | 91 to 94 s | 43 to 58 s |
+| `incremental-on` (`CARGO_INCREMENTAL=1`) | 3 to 4 s | 5 to 6 s | 6 to 8 s |
+
+A comment-only change is the best case: incremental compilation finds no
+semantic change and reuses every codegen unit. A real edit recompiles the
+units it touches, so expect a fraction of the 43 to 94 s, not zero. The
+price is the cold build, 7 to 8% slower, and a `target/` with incremental
+state that only pays off if the same directory survives to the next build:
+a second build in the same job, a self-hosted runner, or a `target/` cache
+that keeps the incremental directories (`rust-cache` does; it makes the
+cache bigger). Confidence: medium (2 samples, best-case change).
+
+Implication: for a PR workflow that builds once from a restored cache,
+incremental compilation is a net loss. It wins where a job builds the same
+crate more than once, or where the runner keeps `target/` between jobs.
+
 ## Bundling
 
 ### On Linux, bundling costs more than a warm compile
@@ -263,9 +306,9 @@ medium (defaults from other batches, 2 samples each). Batch
 `20260911-012718`.
 
 Limit: a cold build links once, so the linker can only ever shave seconds
-off it. Where a linker matters is the warm rebuild, where the link is a
-large share of the 45 to 58 s floor; `--runs 2` is the batch that shows it. On a
-toolchain older than 1.90, or a target that still defaults to GNU `ld`,
+off it. The in-job rebuild (batch `20260911-014047`) didn't move either:
+`mold` rebuilt the app crate in 43 to 45 s against 43 s for the default, so
+the rebuild floor is codegen, not linking. On a toolchain older than 1.90, or a target that still defaults to GNU `ld`,
 `lld` and `mold` do help, which is what the 5 to 20 s folklore is about.
 macOS already ships a fast linker and was skipped.
 
@@ -344,8 +387,8 @@ win on the list, if the app doesn't catch panics.
 
 `CARGO_INCREMENTAL=1` on the release profile: +8% on Linux, +7% on Windows,
 inside the spread on macOS, plus a larger `target/` to cache. It only pays
-on a second build in the same job or with a restored cache; measured with
-`--runs 2` later. Confidence: medium.
+on a second build of the same `target/`; see In-job rebuilds for what it
+buys there. Confidence: medium.
 
 ## A monorepo app (the plugins-workspace `api` example)
 
@@ -440,7 +483,6 @@ bench app. Confidence: high (42 jobs).
 
 - `deps` change scenario for caches.
 - `deps`, `toolchain`, `combo` groups.
-- In-job rebuild (`--runs 2`).
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
   concurrent jobs.

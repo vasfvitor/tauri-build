@@ -1,0 +1,26 @@
+{
+  "name": "baseline-big",
+  "os": "windows-2022",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-014047",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34563099217",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 11,
+    "js_packages": 0,
+    "frontend": 4,
+    "build_1": 363,
+    "build_2": 125,
+    "cargo_1": 330,
+    "cargo_2": 115,
+    "job_total": 539
+  },
+  "binary_bytes": 10906112,
+  "bundle_kbytes": 5348
+}

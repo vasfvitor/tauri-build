@@ -1,0 +1,26 @@
+{
+  "name": "incremental-on",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-014047",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34563099217",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 7,
+    "js_packages": 0,
+    "frontend": 4,
+    "build_1": 396,
+    "build_2": 17,
+    "cargo_1": 370,
+    "cargo_2": 6,
+    "job_total": 465
+  },
+  "binary_bytes": 10774016,
+  "bundle_kbytes": 5356
+}

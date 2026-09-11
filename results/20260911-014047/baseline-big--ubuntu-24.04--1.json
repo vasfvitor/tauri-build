@@ -1,0 +1,26 @@
+{
+  "name": "baseline-big",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-014047",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34563099217",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 22,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 345,
+    "build_2": 141,
+    "cargo_1": 257,
+    "cargo_2": 76,
+    "job_total": 521
+  },
+  "binary_bytes": 10848136,
+  "bundle_kbytes": 347488
+}

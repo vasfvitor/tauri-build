@@ -113,9 +113,10 @@ incremental builds it can be a third of the total. Since Rust 1.90 `lld` is the
 default on `x86_64-unknown-linux-gnu`, so this experiment may show no delta on a
 current stable toolchain. Check the `rustc` version in the job log.
 
-**Measured** (batch `20260911-012718`, Rust 1.98.1): nothing. `lld` and
-`mold` landed on the default on Linux, `rust-lld` was no faster than MSVC
-`link.exe` on Windows. See the findings ledger.
+**Measured** (batches `20260911-012718` and `20260911-014047`, Rust 1.98.1):
+nothing, cold or on an in-job rebuild. `lld` and `mold` landed on the
+default on Linux, `rust-lld` was no faster than MSVC `link.exe` on Windows.
+See the findings ledger.
 
 ## Group `profile`
 
@@ -144,7 +145,9 @@ The bundle size column in the report shows the trade-off each option makes.
 expensive flag (+20 to +66% cargo time), fat LTO the second (+27 to +44%,
 except on Windows). Thin LTO is free, `codegen-units = 256` is slower, not
 faster, and `opt-level` barely moves the needle. `panic = "abort"` halves
-the Windows binary. See the findings ledger.
+the Windows binary. With `--runs 2` (batch `20260911-014047`) incremental
+compilation took the second build's cargo step from 43 to 94 s down to 3 to
+8 s, best case (a comment change). See the findings ledger.
 
 ## Group `bundle`
 

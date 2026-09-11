@@ -1,0 +1,26 @@
+{
+  "name": "baseline",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-014047",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34563099217",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 28,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 275,
+    "build_2": 106,
+    "cargo_1": 210,
+    "cargo_2": 43,
+    "job_total": 420
+  },
+  "binary_bytes": 10732680,
+  "bundle_kbytes": 347236
+}
