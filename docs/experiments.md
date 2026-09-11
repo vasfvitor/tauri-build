@@ -113,6 +113,10 @@ incremental builds it can be a third of the total. Since Rust 1.90 `lld` is the
 default on `x86_64-unknown-linux-gnu`, so this experiment may show no delta on a
 current stable toolchain. Check the `rustc` version in the job log.
 
+**Measured** (batch `20260911-012718`, Rust 1.98.1): nothing. `lld` and
+`mold` landed on the default on Linux, `rust-lld` was no faster than MSVC
+`link.exe` on Windows. See the findings ledger.
+
 ## Group `profile`
 
 All of these set `CARGO_PROFILE_RELEASE_*` environment variables, so the

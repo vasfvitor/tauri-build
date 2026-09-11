@@ -1,0 +1,26 @@
+{
+  "name": "linker-lld",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-012718",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34562258066",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 7,
+    "js_packages": 0,
+    "frontend": 3,
+    "build_1": 366,
+    "build_2": 0,
+    "cargo_1": 339,
+    "cargo_2": 0,
+    "job_total": 402
+  },
+  "binary_bytes": 10576896,
+  "bundle_kbytes": 5252
+}

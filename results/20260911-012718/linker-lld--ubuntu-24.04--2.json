@@ -1,0 +1,26 @@
+{
+  "name": "linker-lld",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-012718",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34562258066",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 31,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 291,
+    "build_2": 0,
+    "cargo_1": 216,
+    "cargo_2": 0,
+    "job_total": 336
+  },
+  "binary_bytes": 10732608,
+  "bundle_kbytes": 347236
+}

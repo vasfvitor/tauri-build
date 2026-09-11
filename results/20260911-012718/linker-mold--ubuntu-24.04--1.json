@@ -1,0 +1,26 @@
+{
+  "name": "linker-mold",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-012718",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34562258066",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 27,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 297,
+    "build_2": 0,
+    "cargo_1": 207,
+    "cargo_2": 0,
+    "job_total": 336
+  },
+  "binary_bytes": 10398208,
+  "bundle_kbytes": 346088
+}

@@ -241,6 +241,37 @@ retry the upload step rather than the whole build.
 spread on Linux. Confidence: medium. Batch `20260910-164108`. This is the
 headroom the profile experiments have to work with.
 
+## Linker
+
+### Swapping the linker buys nothing on a cold build with a current toolchain
+
+The runners had Rust 1.98.1, and since 1.90 the stable toolchain links
+`x86_64-unknown-linux-gnu` with its bundled `rust-lld`. `lld` through
+`clang` and `mold` therefore compete with `lld`, not with GNU `ld`, and land
+on it. Cargo's own timing of the app crate unit (compile plus link):
+
+| app crate unit | Linux | Windows |
+|---|---:|---:|
+| default (`rust-lld` on Linux, MSVC `link.exe` on Windows) | 40 to 54 s | 69 to 110 s |
+| `lld` via `clang` / `rust-lld.exe` | 44 to 48 s | 112 to 131 s |
+| `mold` via `clang` | 41 to 43 s | - |
+
+Whole cargo step: 3m15s to 3m20s on Linux against 3m20s to 3m43s for the
+defaults in two other batches; 5m47s on Windows against 5m05s. `rust-lld`
+on Windows was no faster than `link.exe`, if anything slower. Confidence:
+medium (defaults from other batches, 2 samples each). Batch
+`20260911-012718`.
+
+Limit: a cold build links once, so the linker can only ever shave seconds
+off it. Where a linker matters is the warm rebuild, where the link is a
+large share of the 45 to 58 s floor; `--runs 2` is the batch that shows it. On a
+toolchain older than 1.90, or a target that still defaults to GNU `ld`,
+`lld` and `mold` do help, which is what the 5 to 20 s folklore is about.
+macOS already ships a fast linker and was skipped.
+
+Implication: on Linux with Rust 1.90 or newer, don't add a linker step to
+CI. On Windows, don't bother either.
+
 ## Release profile
 
 The `profile` group changes one `CARGO_PROFILE_RELEASE_*` variable at a time
@@ -408,7 +439,7 @@ bench app. Confidence: high (42 jobs).
 ## Not yet measured
 
 - `deps` change scenario for caches.
-- `linker`, `deps`, `toolchain`, `combo` groups.
+- `deps`, `toolchain`, `combo` groups.
 - In-job rebuild (`--runs 2`).
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
