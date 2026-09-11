@@ -1,0 +1,26 @@
+{
+  "name": "lto-off",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-000401",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34557020362",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 34,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 310,
+    "build_2": 0,
+    "cargo_1": 216,
+    "cargo_2": 0,
+    "job_total": 364
+  },
+  "binary_bytes": 11854992,
+  "bundle_kbytes": 350196
+}

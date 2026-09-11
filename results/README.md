@@ -20,6 +20,7 @@ committed.
 | `20260910-214104` | pw-cache-swatinem (Windows) | 4-core | cold (salted, per-repetition keys) | cold cost of `rust-cache` on the monorepo | 2 samples. Rerun of the cell whose save the rate limit dropped; both saves went through this time. |
 | `20260910-214104-warm-app` | pw-cache-swatinem (Windows) | 4-core | warm, app code changed | the Windows `rust-cache` cell of the `workspace` group | 2 samples, 4 jobs in total. |
 | `20260910-235250` | bundle | 4-core, 3-core | cold, no cache | cost of each bundler, against the all-bundles baseline in `20260910-164108` | 2 samples each, 12 jobs. macOS compile varied 2m19s to 3m13s between identical jobs. |
+| `20260911-000401` | profile | 4-core, 3-core | cold, no cache (`incremental-on` fills a `rust-cache`) | cost of each release-profile flag on the `big` app, against `baseline-big` in `20260910-164108` | 2 samples each, 60 jobs. The reference comes from another batch, so deltas under 10% are noise. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).

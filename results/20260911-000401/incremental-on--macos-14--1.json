@@ -1,0 +1,26 @@
+{
+  "name": "incremental-on",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-000401",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34557020362",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 214,
+    "build_2": 0,
+    "cargo_1": 202,
+    "cargo_2": 0,
+    "job_total": 235
+  },
+  "binary_bytes": 7754160,
+  "bundle_kbytes": 10552
+}

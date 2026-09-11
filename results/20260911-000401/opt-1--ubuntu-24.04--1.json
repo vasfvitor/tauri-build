@@ -1,0 +1,26 @@
+{
+  "name": "opt-1",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-000401",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34557020362",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 35,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 291,
+    "build_2": 0,
+    "cargo_1": 176,
+    "cargo_2": 0,
+    "job_total": 336
+  },
+  "binary_bytes": 13802384,
+  "bundle_kbytes": 355000
+}

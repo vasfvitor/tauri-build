@@ -136,6 +136,12 @@ drift between variants either.
 
 The bundle size column in the report shows the trade-off each option makes.
 
+**Measured** (batch `20260911-000401`): `codegen-units = 1` is the one
+expensive flag (+20 to +66% cargo time), fat LTO the second (+27 to +44%,
+except on Windows). Thin LTO is free, `codegen-units = 256` is slower, not
+faster, and `opt-level` barely moves the needle. `panic = "abort"` halves
+the Windows binary. See the findings ledger.
+
 ## Group `bundle`
 
 | Name | Change |

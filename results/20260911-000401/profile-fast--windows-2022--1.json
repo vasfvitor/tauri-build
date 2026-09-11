@@ -1,0 +1,26 @@
+{
+  "name": "profile-fast",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-000401",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34557020362",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 9,
+    "js_packages": 0,
+    "frontend": 5,
+    "build_1": 366,
+    "build_2": 0,
+    "cargo_1": 330,
+    "cargo_2": 0,
+    "job_total": 422
+  },
+  "binary_bytes": 10782208,
+  "bundle_kbytes": 5240
+}

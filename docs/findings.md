@@ -241,6 +241,81 @@ retry the upload step rather than the whole build.
 spread on Linux. Confidence: medium. Batch `20260910-164108`. This is the
 headroom the profile experiments have to work with.
 
+## Release profile
+
+The `profile` group changes one `CARGO_PROFILE_RELEASE_*` variable at a time
+on the `big` app (cold, no cache, 2 samples each) and compares cargo time
+and binary size with `baseline-big` from batch `20260910-164108`: cargo
+3m43s on Linux, 5m59s on Windows, 3m25s on macOS, binary 10.3 / 10.4 /
+7.2 MB. The reference sits in another batch, so deltas under 10% are noise.
+Batch `20260911-000401`.
+
+### `codegen-units = 1` is the expensive flag
+
+| cargo time | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| default (16) | 3m43s | 5m59s | 3m25s |
+| `codegen-units = 1` | 4m27s (+20%) | 8m23s (+40%) | 5m41s (+66%) |
+| `codegen-units = 256` | 4m32s (+22%) | 6m30s (+9%) | 3m13s (-6%) |
+
+One codegen unit serialises the app crate, the crate that carries the
+monomorphized Tauri runtime, onto one core. Binary 15 to 20% smaller (8.6 /
+9.4 / 5.9 MB). Confidence: high, outside the spread on all three runners.
+
+256 units went the other way from the expectation: slower on Linux and
+Windows, flat on macOS. With 4 cores there's no parallelism left to buy past
+16 units, and each extra unit costs LLVM overhead and inlining. Confidence:
+medium. Implication: leave `codegen-units` alone in CI, and override
+`codegen-units = 1` from release profiles in pull request builds.
+
+### Fat LTO costs 27 to 44%, thin LTO is free
+
+| cargo time | Linux | Windows | macOS | binary (Linux / Windows / macOS) |
+|---|---:|---:|---:|---|
+| `lto = "off"` | 3m25s (-8%) | 4m44s (-21%) | 3m21s (-2%) | 11.3 / 10.4 / 7.7 MB |
+| default (`false`, thin-local) | 3m43s | 5m59s | 3m25s | 10.3 / 10.4 / 7.2 MB |
+| `lto = "thin"` | 3m37s (-3%) | 6m02s (+1%) | 3m25s (0%) | 10.2 / 10.6 / 7.5 MB |
+| `lto = "fat"` | 4m44s (+27%) | 5m46s (-4%) | 4m56s (+44%) | 8.6 / 9.8 / 6.1 MB |
+
+Thin LTO lands on the default everywhere and buys nothing in size either;
+fat LTO takes 15 to 20% off the binary for a quarter to half more compile
+time on Linux and macOS. Windows didn't show the fat LTO cost (5m55s to
+6m38s against a 6m07s to 6m38s reference), which matches the monorepo
+result, where Windows paid for `codegen-units = 1` and Linux paid for
+neither. `lto = "off"` was a real win only on Windows, 1m15s outside the
+spread. Confidence: medium.
+
+### `opt-level` barely moves compile time
+
+| cargo time | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| `opt-level = 1` | 3m26s (-8%) | 5m53s (-2%) | 3m34s (+4%) |
+| `opt-level = "s"` | 3m38s (-2%) | 5m30s (-8%) | 2m25s (-29%) |
+| `--profile fast` (`opt-level = 1`, 256 units, no LTO) | 3m17s (-12%) | 5m25s (-9%) | 2m36s (-24%) |
+
+A Tauri build spends its time in dependency front-ends, monomorphization
+and linking, not in the optimiser, so dropping the optimisation level does
+little. The macOS numbers are inside a 2m08s to 3m04s spread. The `fast`
+profile is the best cell on Linux and no better than `lto = "off"` alone.
+Confidence: medium (Linux, Windows), low (macOS).
+
+Implication: a "fast" CI profile is worth about 10%. Caching and skipping
+bundlers are worth 50 to 70%. Don't start here.
+
+### `panic = "abort"` halves the Windows binary
+
+Cargo -4% on Linux, -10% on Windows, -9% on macOS: inside the spread. The
+binary went from 10.3 to 7.6 MB on Linux, 10.4 to 4.9 MB on Windows, 7.2
+to 5.0 MB on macOS. Confidence: high for size, low for time. Cheapest size
+win on the list, if the app doesn't catch panics.
+
+### Incremental release builds cost 7 to 8% cold
+
+`CARGO_INCREMENTAL=1` on the release profile: +8% on Linux, +7% on Windows,
+inside the spread on macOS, plus a larger `target/` to cache. It only pays
+on a second build in the same job or with a restored cache; measured with
+`--runs 2` later. Confidence: medium.
+
 ## A monorepo app (the plugins-workspace `api` example)
 
 The `workspace` group builds the `api` example of `tauri-apps/plugins-workspace`:
@@ -270,7 +345,8 @@ medium on Windows, low elsewhere.
 Implication: keep the size profile for releases, where a binary 2.5x smaller
 is the point, and override it for pull request builds with
 `CARGO_PROFILE_RELEASE_LTO=false` and `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16`.
-The `profile` group on the bench app is meant to refine the per-flag cost.
+The per-flag numbers under Release profile say the cost is `codegen-units = 1`
+first and fat LTO second.
 
 ### A warm cache works the same in a monorepo, with one trap
 
@@ -332,7 +408,7 @@ bench app. Confidence: high (42 jobs).
 ## Not yet measured
 
 - `deps` change scenario for caches.
-- `linker`, `profile`, `deps`, `toolchain`, `combo` groups.
+- `linker`, `deps`, `toolchain`, `combo` groups.
 - In-job rebuild (`--runs 2`).
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6

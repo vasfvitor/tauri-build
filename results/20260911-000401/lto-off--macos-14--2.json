@@ -1,0 +1,26 @@
+{
+  "name": "lto-off",
+  "os": "macos-14",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260911-000401",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34557020362",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 228,
+    "build_2": 0,
+    "cargo_1": 214,
+    "cargo_2": 0,
+    "job_total": 252
+  },
+  "binary_bytes": 8061296,
+  "bundle_kbytes": 10916
+}
