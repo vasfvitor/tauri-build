@@ -125,7 +125,8 @@ batches of 30 and 42 jobs both lost more than half.
 Implication: the `sccache` GitHub backend suits a workflow with a few
 concurrent jobs, not a large matrix. Check the `Cache write errors` line
 before trusting a hit rate. The harness now gives each repetition its own
-cache key.
+cache key; the 4-job rerun of the Windows cell saved and restored both
+repetitions without a hitch (batch `20260910-214104`).
 
 ### Populating a cache is nearly free, except for `sccache`
 
@@ -241,15 +242,16 @@ profile:
 | | Linux | Windows | macOS |
 |---|---:|---:|---:|
 | no cache | 5m35s | 7m06s | 4m53s |
-| `rust-cache` defaults | 1m13s | no cache saved* | 1m45s |
+| `rust-cache` defaults | 1m13s | 2m34s* | 1m45s |
 | `rust-cache`, `cache-workspace-crates: true` | 0m57s | 2m53s | 1m17s |
 | plain `actions/cache` | 1m03s | 2m50s | 1m10s |
 | `rust-cache` + `sccache` | 1m32s | 3m32s | 1m15s |
 | `sccache` only, partial cache | 3m21s | 7m05s | 2m33s |
 
-*The cold save failed, see the rate limit entry; that cell is a cold build
-and says nothing about the option. Whole `tauri build` wall time with a
-restored `target/` was 2m39s to 3m16s on Linux, 3m25s to 4m11s on Windows,
+*Measured in a 4-job rerun (batch `20260910-214104-warm-app`) after the
+rate limit dropped the first cold save, see the rate limit entry. Whole
+`tauri build` wall time with a restored `target/` was 2m39s to 3m16s on
+Linux, 2m59s to 4m11s on Windows,
 1m24s to 2m02s on macOS, against 6m46s to 7m25s, 7m02s to 7m38s, and 4m06s
 to 5m11s uncached. Confidence: medium.
 
@@ -258,12 +260,13 @@ to 5m11s uncached. Confidence: medium.
 With its defaults `rust-cache` deletes the 16 plugins from `target/` before
 saving, and the warm run recompiles them: cargo took 1m13s against 0m57s on
 Linux and 1m45s against 1m17s on macOS with `cache-workspace-crates: true`.
-Real, but small: the plugins are thin crates, and the expensive part of a
-Tauri build, the monomorphized runtime, sits in the app crate, which
-recompiles anyway. Plain `actions/cache` keeps the plugins too and landed
-within the spread of the `cache-workspace-crates` setting. Adding `sccache`
-on top didn't help, as on the bench app. Confidence: medium (Windows lost
-its comparison).
+On Windows the defaults came out 19 s faster (2m34s against 2m53s), which
+is the runner's spread, not a gain. Real, but small: the plugins are thin
+crates, and the expensive part of a Tauri build, the monomorphized runtime,
+sits in the app crate, which recompiles anyway. Plain `actions/cache` keeps
+the plugins too and landed within the spread of the `cache-workspace-crates`
+setting. Adding `sccache` on top didn't help, as on the bench app.
+Confidence: medium (the Windows cell comes from a separate 4-job batch).
 
 Implication: in a workspace, set `cache-workspace-crates: true` on
 `rust-cache` or use plain `actions/cache`. Without it the plugins cost a
@@ -293,9 +296,7 @@ bench app. Confidence: high (42 jobs).
 - `deps` change scenario for caches.
 - `bundle`, `linker`, `profile`, `deps`, `toolchain`, `combo` groups.
 - In-job rebuild (`--runs 2`).
-- The Windows `rust-cache` cell of the `workspace` group and the `deps`
-  scenario on the workspace app, now that repetitions have their own cache
-  keys.
+- The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
   concurrent jobs.
 - Larger runners, prebuilt containers, cross-compilation.

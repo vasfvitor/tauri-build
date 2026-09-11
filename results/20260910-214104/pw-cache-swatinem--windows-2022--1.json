@@ -1,0 +1,26 @@
+{
+  "name": "pw-cache-swatinem",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "plugins-api",
+  "status": "success",
+  "tag": "20260910-214104",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34547535170",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 23,
+    "frontend": 14,
+    "build_1": 431,
+    "build_2": 0,
+    "cargo_1": 396,
+    "cargo_2": 0,
+    "job_total": 522
+  },
+  "binary_bytes": 21929984,
+  "bundle_kbytes": 36712
+}
