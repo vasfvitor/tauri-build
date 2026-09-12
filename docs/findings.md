@@ -358,7 +358,27 @@ on the `big` app (cold, no cache, 2 samples each) and compares cargo time
 and binary size with `baseline-big` from batch `20260910-164108`: cargo
 3m43s on Linux, 5m59s on Windows, 3m25s on macOS, binary 10.3 / 10.4 /
 7.2 MB. The reference sits in another batch, so deltas under 10% are noise.
-Batch `20260911-000401`.
+Batch `20260911-000401`. The three flags that matter were rerun with an
+in-batch reference and 3 samples per cell (batch `20260912-140937`); the
+next entry pools both batches.
+
+### Rerun with an in-batch reference: only `codegen-units = 1` is expensive
+
+Cargo time, median of the pooled samples (6 for the reference, 5 per flag),
+with the binary as Linux / Windows / macOS:
+
+| | Linux | Windows | macOS | binary |
+|---|---:|---:|---:|---|
+| `baseline-big` | 3m51s | 6m08s | 3m25s | 10.3 / 10.4 / 7.2 MB |
+| `codegen-units = 1` | 4m50s (+26%) | 8m10s (+33%) | 5m16s (+54%) | 8.6 / 9.4 / 5.9 MB |
+| `lto = "fat"` | 4m24s (+14%) | 6m00s (-2%) | 3m50s (+12%) | 8.6 / 9.8 / 6.1 MB |
+| `--profile fast` | 3m10s (-18%) | 4m43s (-23%) | 2m46s (-19%) | 14.3 / 10.3 / 11.4 MB |
+
+Within the rerun alone (3 samples each, same day, same reference):
+`codegen-units = 1` +21 / +23 / +42%, fat LTO +7 / -8 / +1%, the `fast`
+profile -21 / -28 / -20%. Every `codegen-units = 1` sample is slower than every
+reference sample on Linux and macOS. Confidence: high for
+`codegen-units = 1` and the `fast` profile, medium for fat LTO (see below).
 
 ### `codegen-units = 1` is the expensive flag
 
@@ -370,7 +390,8 @@ Batch `20260911-000401`.
 
 One codegen unit serialises the app crate, the crate that carries the
 monomorphized Tauri runtime, onto one core. Binary 15 to 20% smaller (8.6 /
-9.4 / 5.9 MB). Confidence: high, outside the spread on all three runners.
+9.4 / 5.9 MB). Confidence: high, outside the spread on all three runners,
+and the rerun with an in-batch reference agrees (+26 / +33 / +54% pooled).
 
 256 units went the other way from the expectation: slower on Linux and
 Windows, flat on macOS. With 4 cores there's no parallelism left to buy past
@@ -378,7 +399,7 @@ Windows, flat on macOS. With 4 cores there's no parallelism left to buy past
 medium. Implication: leave `codegen-units` alone in CI, and override
 `codegen-units = 1` from release profiles in pull request builds.
 
-### Fat LTO costs 27 to 44%, thin LTO is free
+### Fat LTO costs 0 to 15%, with bad days at 40%; thin LTO is free
 
 | cargo time | Linux | Windows | macOS | binary (Linux / Windows / macOS) |
 |---|---:|---:|---:|---|
@@ -387,13 +408,19 @@ medium. Implication: leave `codegen-units` alone in CI, and override
 | `lto = "thin"` | 3m37s (-3%) | 6m02s (+1%) | 3m25s (0%) | 10.2 / 10.6 / 7.5 MB |
 | `lto = "fat"` | 4m44s (+27%) | 5m46s (-4%) | 4m56s (+44%) | 8.6 / 9.8 / 6.1 MB |
 
-Thin LTO lands on the default everywhere and buys nothing in size either;
-fat LTO takes 15 to 20% off the binary for a quarter to half more compile
-time on Linux and macOS. Windows didn't show the fat LTO cost (5m55s to
-6m38s against a 6m07s to 6m38s reference), which matches the monorepo
-result, where Windows paid for `codegen-units = 1` and Linux paid for
-neither. `lto = "off"` was a real win only on Windows, 1m15s outside the
-spread. Confidence: medium.
+Thin LTO lands on the default everywhere and buys nothing in size either.
+Fat LTO takes 15 to 20% off the binary, and its compile cost turned out
+smaller and less stable than this first batch suggested. The rerun with an
+in-batch reference (batch `20260912-140937`, 3 samples) put it at +7% on
+Linux, +1% on macOS and -8% on Windows; pooled over both batches it is
++14 / -2 / +12%. The macOS samples split by batch, 4m49s to 5m02s in the
+first and 3m26s to 3m50s in the second against a reference of 2m24s to
+3m39s, so the +44% was one day's runners. Windows never showed a fat LTO
+cost, which matches the monorepo result, where Windows paid for
+`codegen-units = 1` and Linux paid for neither. `lto = "off"` was a real
+win only on Windows, 1m15s outside the spread. Confidence: medium, the
+samples overlap; the safe claim is that fat LTO costs far less than
+`codegen-units = 1` and buys about the same binary size.
 
 ### `opt-level` barely moves compile time
 
@@ -405,12 +432,19 @@ spread. Confidence: medium.
 
 A Tauri build spends its time in dependency front-ends, monomorphization
 and linking, not in the optimiser, so dropping the optimisation level does
-little. The macOS numbers are inside a 2m08s to 3m04s spread. The `fast`
-profile is the best cell on Linux and no better than `lto = "off"` alone.
+little on its own. The macOS numbers are inside a 2m08s to 3m04s spread.
 Confidence: medium (Linux, Windows), low (macOS).
 
-Implication: a "fast" CI profile is worth about 10%. Caching and skipping
-bundlers are worth 50 to 70%. Don't start here.
+The `fast` profile as a whole is a different matter: the rerun with an
+in-batch reference gave -21 / -28 / -20% and the pooled 5 samples
+-18 / -23 / -19%, consistent on all three runners. It is the combination
+that pays, `lto = "off"` most of all on Windows. The price is the binary:
+14.3 MB against 10.3 on Linux and 11.4 against 7.2 on macOS, unchanged on
+Windows. Confidence: high (batches `20260911-000401`, `20260912-140937`).
+
+Implication: a "fast" CI profile is worth about 20% of cargo time, for a
+binary 40 to 60% larger on Linux and macOS. Caching and skipping bundlers
+are worth 50 to 70%. Add it after those, for pull request builds only.
 
 ### `panic = "abort"` halves the Windows binary
 
@@ -455,8 +489,8 @@ medium on Windows, low elsewhere.
 Implication: keep the size profile for releases, where a binary 2.5x smaller
 is the point, and override it for pull request builds with
 `CARGO_PROFILE_RELEASE_LTO=false` and `CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16`.
-The per-flag numbers under Release profile say the cost is `codegen-units = 1`
-first and fat LTO second.
+The per-flag numbers under Release profile say the cost is
+`codegen-units = 1`; fat LTO on its own is small and inconsistent.
 
 ### A warm cache works the same in a monorepo, with one trap
 

@@ -1,0 +1,26 @@
+{
+  "name": "lto-fat",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-140937",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34707385305",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 243,
+    "build_2": 0,
+    "cargo_1": 230,
+    "cargo_2": 0,
+    "job_total": 261
+  },
+  "binary_bytes": 6409536,
+  "bundle_kbytes": 8984
+}

@@ -1,0 +1,26 @@
+{
+  "name": "cgu-1",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-140937",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34707385305",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 303,
+    "build_2": 0,
+    "cargo_1": 290,
+    "cargo_2": 0,
+    "job_total": 324
+  },
+  "binary_bytes": 6225744,
+  "bundle_kbytes": 8808
+}

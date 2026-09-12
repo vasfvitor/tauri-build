@@ -1,0 +1,26 @@
+{
+  "name": "cgu-1",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-140937",
+  "change": "none",
+  "features": "big",
+  "ncpu": 4,
+  "run_id": "34707385305",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 7,
+    "js_packages": 0,
+    "frontend": 3,
+    "build_1": 511,
+    "build_2": 0,
+    "cargo_1": 490,
+    "cargo_2": 0,
+    "job_total": 540
+  },
+  "binary_bytes": 9887744,
+  "bundle_kbytes": 5068
+}

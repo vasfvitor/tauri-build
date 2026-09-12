@@ -1,0 +1,26 @@
+{
+  "name": "profile-fast",
+  "os": "macos-14",
+  "rep": 3,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-140937",
+  "change": "none",
+  "features": "big",
+  "ncpu": 3,
+  "run_id": "34707385305",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 169,
+    "build_2": 0,
+    "cargo_1": 156,
+    "cargo_2": 0,
+    "job_total": 187
+  },
+  "binary_bytes": 11998368,
+  "bundle_kbytes": 15416
+}

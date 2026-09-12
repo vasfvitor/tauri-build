@@ -151,11 +151,15 @@ drift between variants either.
 
 The bundle size column in the report shows the trade-off each option makes.
 
-**Measured** (batch `20260911-000401`): `codegen-units = 1` is the one
-expensive flag (+20 to +66% cargo time), fat LTO the second (+27 to +44%,
-except on Windows). Thin LTO is free, `codegen-units = 256` is slower, not
-faster, and `opt-level` barely moves the needle. `panic = "abort"` halves
-the Windows binary. With `--runs 2` (batch `20260911-014047`) incremental
+**Measured** (batches `20260911-000401` and `20260912-140937`, the second
+with an in-batch reference and 3 samples per cell): `codegen-units = 1` is
+the one expensive flag (+26 / +33 / +54% cargo time pooled). Fat LTO came
+out at +7 / -8 / +1% in the rerun and +14 / -2 / +12% pooled, far below the
+first batch's +27 to +44%, for a binary 15 to 20% smaller. The `fast`
+profile is worth about 20% on every runner (-18 / -23 / -19% pooled) for a
+binary 40 to 60% larger on Linux and macOS. Thin LTO is free,
+`codegen-units = 256` is slower, not faster, and `opt-level` alone barely
+moves the needle. `panic = "abort"` halves the Windows binary. With `--runs 2` (batch `20260911-014047`) incremental
 compilation took the second build's cargo step from 43 to 94 s down to 3 to
 8 s, best case (a comment change). See the findings ledger.
 
