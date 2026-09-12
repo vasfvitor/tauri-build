@@ -320,6 +320,54 @@ retry the upload step rather than the whole build.
 spread on Linux. Confidence: medium. Batch `20260910-164108`. This is the
 headroom the profile experiments have to work with.
 
+## Dependencies
+
+### A heavy dependency off the critical path is free on 4 cores
+
+The `heavy` feature adds `reqwest` (`rustls-tls`, `json` features) and `tokio` (multi-thread
+runtime, macros): 29 more crates (296 to 325 on Linux) and 12% more
+compiler CPU (728 to 812 s of unit time on Linux). Cold, no cache, median
+of 2, against the trivial app of batch `20260910-164108`:
+
+| cargo, cold | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| trivial app | 3m43s | 5m05s | 2m50s |
+| `heavy` | 3m38s | 4m57s | 3m33s |
+
+Linux and Windows moved by nothing; macOS by 43 s, inside its spread. The
+extra crates compile in parallel next to the chain that bounds the build,
+`syn`, `gtk`, `tauri-utils`, `tauri`, then the app crate, and none of them
+is on it: `rustls` is the biggest at 23 s. The binary grows from 10.2 to
+12.9 MB. Confidence: medium (2 samples, reference from another batch).
+Batch `20260912-142710`.
+
+Limit: this holds while the runner has idle cores. On the 2-core private
+runners the same crates would land on the critical path, and a dependency
+that the app crate waits for (a proc-macro crate, or something `tauri`
+itself depends on) is not free anywhere.
+
+### Warm, the dependency weight vanishes
+
+Warm run after the app-crate change, `rust-cache`, median of 2:
+
+| | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| `heavy`, no cache | 4m56s | 5m40s | 3m30s |
+| `heavy`, `rust-cache` | 1m53s (-62%) | 2m41s (-53%) | 1m19s (-62%) |
+| cargo alone, warm | 41 s | 2m17s | 1m06s |
+
+The warm cargo step is the same floor as the trivial app (45 to 58 s on
+Linux, 1m45s to 2m08s on Windows, 1m03s to 1m17s on macOS): the app crate
+plus linking, and the 29 extra crates cost nothing once cached. Saving the
+cache on the cold run was free again (4m05s, 5m34s, 2m45s against 3m38s,
+4m57s, 3m33s uncached, all within spread). Confidence: medium (2 samples).
+Batches `20260912-142710`, `20260912-142710-warm-app`.
+
+Implication: dependency pruning is a cold-build and binary-size concern,
+not a CI-time one, as long as the workflow caches `target/`. A team
+worried about build time gets more from a cache than from auditing
+`Cargo.toml`.
+
 ## Linker
 
 ### Swapping the linker buys nothing on a cold build with a current toolchain
@@ -551,7 +599,7 @@ bench app. Confidence: high (42 jobs).
 
 ## Not yet measured
 
-- `deps`, `toolchain`, `combo` groups.
+- `toolchain` and `combo` groups.
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
   concurrent jobs.

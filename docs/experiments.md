@@ -199,6 +199,13 @@ removes 1m14s from a Linux build; NSIS-only saves 6 s on Windows and
 that a warm cache makes dependency weight almost irrelevant. The lesson for
 the guide: dependency pruning matters only for uncached builds.
 
+**Measured** (batches `20260912-142710` and `20260912-142710-warm-app`):
+`reqwest` + `tokio` add 29 crates and 12% compiler CPU but no wall time on
+the 4-core Linux and Windows runners (3m38s and 4m57s cargo against 3m43s
+and 5m05s), because they compile next to the critical path, not on it. Warm
+with `rust-cache` the cargo step is the same 41 s to 2m17s floor as the
+trivial app, a 53 to 62% cut of the whole build. Binary 10.2 to 12.9 MB.
+
 ## Group `frontend`
 
 | Name | Change |

@@ -1,0 +1,26 @@
+{
+  "name": "deps-heavy",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-142710-warm-app",
+  "change": "app",
+  "features": "heavy",
+  "ncpu": 4,
+  "run_id": "34708653328",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 32,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 272,
+    "build_2": 0,
+    "cargo_1": 200,
+    "cargo_2": 0,
+    "job_total": 315
+  },
+  "binary_bytes": 13478728,
+  "bundle_kbytes": 357380
+}

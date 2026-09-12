@@ -1,0 +1,26 @@
+{
+  "name": "deps-heavy-cached",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-142710-warm-app",
+  "change": "app",
+  "features": "heavy",
+  "ncpu": 3,
+  "run_id": "34708653328",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 75,
+    "build_2": 0,
+    "cargo_1": 63,
+    "cargo_2": 0,
+    "job_total": 99
+  },
+  "binary_bytes": 9936480,
+  "bundle_kbytes": 13740
+}

@@ -1,0 +1,26 @@
+{
+  "name": "deps-heavy",
+  "os": "windows-2022",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-142710",
+  "change": "none",
+  "features": "heavy",
+  "ncpu": 4,
+  "run_id": "34708267022",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 10,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 258,
+    "build_2": 0,
+    "cargo_1": 239,
+    "cargo_2": 0,
+    "job_total": 290
+  },
+  "binary_bytes": 13606400,
+  "bundle_kbytes": 7392
+}

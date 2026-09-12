@@ -26,6 +26,8 @@ committed.
 | `20260912-130914` | cache | 4-core, 3-core | cold (salted keys) | cold cost of each cache, repeat of `20260910-170743` | 2 samples each, 24 jobs, no failures. `sccache` lost 73 to 100% of its writes on Linux and Windows, 34 to 51% on macOS. |
 | `20260912-130914-warm-deps` | cache | 4-core, 3-core | warm, new dependency (`cargo add chrono`) | cache comparison after a lockfile change | 2 samples each. `rust-cache` and `actions/cache` restored the previous entry; `sccache` hit 0 to 62% and, on top of `rust-cache`, 0 of 3 to 14 requests. |
 | `20260912-140937` | baseline-big, cgu-1, lto-fat, profile-fast | 4-core, 3-core | cold | profile flags against an in-batch reference | 3 samples each, 36 jobs, no failures. Rerun of the strongest `profile` claims; pooled with `20260911-000401` in the findings. |
+| `20260912-142710` | deps | 4-core, 3-core | cold (salted keys) | cost of `reqwest` + `tokio`; cost of saving `rust-cache` | 2 samples each, 12 jobs, no failures. |
+| `20260912-142710-warm-app` | deps | 4-core, 3-core | warm, app code changed | whether a cache erases dependency weight | 2 samples each, 12 jobs, no failures. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).

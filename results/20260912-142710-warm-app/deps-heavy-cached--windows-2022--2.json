@@ -1,0 +1,26 @@
+{
+  "name": "deps-heavy-cached",
+  "os": "windows-2022",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-142710-warm-app",
+  "change": "app",
+  "features": "heavy",
+  "ncpu": 4,
+  "run_id": "34708653328",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 10,
+    "js_packages": 0,
+    "frontend": 4,
+    "build_1": 178,
+    "build_2": 0,
+    "cargo_1": 152,
+    "cargo_2": 0,
+    "job_total": 258
+  },
+  "binary_bytes": 13606400,
+  "bundle_kbytes": 7392
+}

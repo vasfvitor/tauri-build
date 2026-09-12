@@ -1,0 +1,26 @@
+{
+  "name": "deps-heavy-cached",
+  "os": "ubuntu-24.04",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-142710",
+  "change": "none",
+  "features": "heavy",
+  "ncpu": 4,
+  "run_id": "34708267022",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 22,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 317,
+    "build_2": 0,
+    "cargo_1": 239,
+    "cargo_2": 0,
+    "job_total": 352
+  },
+  "binary_bytes": 13478728,
+  "bundle_kbytes": 357380
+}
