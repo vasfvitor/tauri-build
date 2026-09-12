@@ -1,0 +1,26 @@
+{
+  "name": "cache-sccache",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-130914-warm-deps",
+  "change": "deps",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34705832916",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 32,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 1,
+    "build_1": 271,
+    "build_2": 0,
+    "cargo_1": 204,
+    "cargo_2": 0,
+    "job_total": 317
+  },
+  "binary_bytes": 10731912,
+  "bundle_kbytes": 347244
+}

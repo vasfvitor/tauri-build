@@ -1,0 +1,26 @@
+{
+  "name": "cache-swatinem",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-130914-warm-deps",
+  "change": "deps",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34705832916",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 88,
+    "build_2": 0,
+    "cargo_1": 75,
+    "cargo_2": 0,
+    "job_total": 116
+  },
+  "binary_bytes": 7589456,
+  "bundle_kbytes": 10416
+}

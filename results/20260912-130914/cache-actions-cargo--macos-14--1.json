@@ -1,0 +1,26 @@
+{
+  "name": "cache-actions-cargo",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-130914",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34704359921",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 189,
+    "build_2": 0,
+    "cargo_1": 176,
+    "cargo_2": 0,
+    "job_total": 212
+  },
+  "binary_bytes": 7589488,
+  "bundle_kbytes": 10372
+}

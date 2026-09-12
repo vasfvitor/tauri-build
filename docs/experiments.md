@@ -92,6 +92,16 @@ is an artifact. The honest warm figure was `rust-cache` alone, with cargo at
 75 s on Linux, 160 s on Windows and 58 s on macOS, all of it the app crate.
 `sccache` alone was the worst warm option on Linux at 190 s of cargo.
 
+**Measured** (batches `20260910-165048-warm-app`, `20260910-170743`,
+`20260912-130914` and `20260912-130914-warm-deps`): a warm `rust-cache` or
+`actions/cache` cuts a normal commit by 55 to 65% and costs nothing to
+populate. A new dependency costs the same as an app change: the restore keys
+fall back to the previous entry and cargo only compiles the new crates. The
+`--change deps` expectation for `sccache` did not hold, a crate compiled for
+the first time is in no cache, and on top of `rust-cache` it hit 0 of its
+requests. Alone it stays the worst option, and in a matrix of 24 or more
+jobs the cache API rate limit drops most of its writes.
+
 **Caveats:** caches are per-branch with fallback to the default branch, so
 PR builds only benefit if `main` has a cache. The `key` input in the workflow
 namespaces the cache per experiment so variants don't overwrite each other.

@@ -1,0 +1,26 @@
+{
+  "name": "cache-actions-cargo",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-130914-warm-deps",
+  "change": "deps",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34705832916",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 22,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 123,
+    "build_2": 0,
+    "cargo_1": 49,
+    "cargo_2": 0,
+    "job_total": 161
+  },
+  "binary_bytes": 10731912,
+  "bundle_kbytes": 347244
+}

@@ -56,7 +56,9 @@ find_run() {
 
 dispatch_and_wait() {
   local tag="$1" change="$2" since run_id dest
-  since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  # Local clocks drift from GitHub's by a few seconds, so give the "newer than
+  # the dispatch" filter a margin or the run created 1 s "before" it is missed.
+  since=$(date -u -d '-30 seconds' +%Y-%m-%dT%H:%M:%SZ)
   echo ">> dispatching experiments (only='$ONLY' os='$OS' runs=$RUNS repeat=$REPEAT change=$change salt=$SALT tag=$tag ref=$REF)"
   gh workflow run experiments.yml --ref "$REF" \
     -f only="$ONLY" -f os="$OS" -f runs="$RUNS" -f repeat="$REPEAT" -f change="$change" \

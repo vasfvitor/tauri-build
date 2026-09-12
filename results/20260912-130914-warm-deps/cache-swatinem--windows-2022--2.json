@@ -1,0 +1,26 @@
+{
+  "name": "cache-swatinem",
+  "os": "windows-2022",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-130914-warm-deps",
+  "change": "deps",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34705832916",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 8,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 149,
+    "build_2": 0,
+    "cargo_1": 129,
+    "cargo_2": 0,
+    "job_total": 201
+  },
+  "binary_bytes": 10804224,
+  "bundle_kbytes": 5304
+}

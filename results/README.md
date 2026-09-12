@@ -23,6 +23,8 @@ committed.
 | `20260911-000401` | profile | 4-core, 3-core | cold, no cache (`incremental-on` fills a `rust-cache`) | cost of each release-profile flag on the `big` app, against `baseline-big` in `20260910-164108` | 2 samples each, 60 jobs. The reference comes from another batch, so deltas under 10% are noise. |
 | `20260911-012718` | linker | 4-core | cold, no cache | linker swaps against the defaults in `20260910-164108` and `20260910-235250` | 2 samples each, 6 jobs. Rust 1.98.1, which already links Linux with `rust-lld`. |
 | `20260911-014047` | baseline, baseline-big, incremental-on, linker-mold | 4-core, 3-core | cold, then a second build in the same job after a comment change (`--runs 2`) | in-job rebuild cost; incremental compilation; linker on a rebuild | 2 samples each, 20 jobs. `build #2` includes bundling; the JSON records carry `cargo_2` on its own. |
+| `20260912-130914` | cache | 4-core, 3-core | cold (salted keys) | cold cost of each cache, repeat of `20260910-170743` | 2 samples each, 24 jobs, no failures. `sccache` lost 73 to 100% of its writes on Linux and Windows, 34 to 51% on macOS. |
+| `20260912-130914-warm-deps` | cache | 4-core, 3-core | warm, new dependency (`cargo add chrono`) | cache comparison after a lockfile change | 2 samples each. `rust-cache` and `actions/cache` restored the previous entry; `sccache` hit 0 to 62% and, on top of `rust-cache`, 0 of 3 to 14 requests. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).

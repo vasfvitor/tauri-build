@@ -99,8 +99,43 @@ lands within the spread of `rust-cache` alone, sometimes behind it because of
 the per-object uploads. Confidence: medium. Batches `20260910-155243-warm`
 (the misleading one), `20260910-165048-warm-app` (the corrected one).
 
-Open: the `deps` scenario (lockfile changed) is where `sccache` should
-matter, because lockfile-keyed caches miss. Not measured yet.
+### A new dependency costs the same as an app change, and `sccache` can't help
+
+Warm run after `cargo add chrono` (lockfile changed, 3 new crates), cargo
+time, median of 2, next to the app-change scenario:
+
+| | Linux app / deps | Windows app / deps | macOS app / deps |
+|---|---:|---:|---:|
+| `rust-cache` | 0m58s / 0m50s | 1m45s / 2m05s | 1m06s / 1m21s |
+| plain `actions/cache` | 0m45s / 0m57s | 2m01s / 2m07s | 1m03s / 1m05s |
+| `rust-cache` + `sccache` | 0m52s / 0m53s | 2m08s / 2m10s | 1m17s / 1m28s |
+| `sccache` only | 2m43s / 3m45s | 3m48s / 5m45s | 1m27s / 2m19s |
+
+The expectation was wrong: a lockfile-keyed cache doesn't "miss" on a new
+dependency. `rust-cache` and `actions/cache` fall back to the previous entry
+through their restore keys, and cargo's per-crate fingerprints keep the
+other 580 crates. The timings show the new crates (`chrono`,
+`iana-time-zone`, `num-traits`) at 3 s on Linux and 15 s on Windows on top
+of the usual app crate. Every difference in the table is within the spread.
+
+`sccache` has nothing to offer here. A crate that was never compiled before
+can't be in any cache: with `rust-cache` restored, `sccache` saw 3 to 14
+compile requests and hit none of them. Alone, it was worse than in the app
+scenario and close to a cold build on Linux and Windows, because the cold
+batch of 24 jobs had lost 73 to 100% of its writes to the rate limit (34
+to 51% on macOS, which explains the better macOS number). Confidence: medium
+for the lockfile-keyed caches, high for the claim that `sccache` can't serve
+a new crate. Batches `20260912-130914` and `20260912-130914-warm-deps`.
+
+Limit: the harness edits the lockfile after the restore step, so the
+restore was an exact key hit. In a real commit it is a prefix fallback with
+the same content, plus a save of the new entry in the post step.
+
+Implication: the two scenarios where `sccache` would earn its place are a
+`target/` cache that is missing or unusable while the objects were compiled
+before (a new branch with no fallback, an evicted cache, a dependency
+rolled back to a known version), and a small enough matrix to survive the
+rate limit. Neither is the normal commit or the normal dependency bump.
 
 ### The cache API rate limit silently truncates `sccache`
 
@@ -114,6 +149,7 @@ still succeeds and the cache is quietly partial:
 |---|---:|---|
 | bench app, `20260910-170743` | 30 | 60 to 85%, every runner |
 | monorepo, `20260910-194307` | 42 | 56% on Linux and macOS, 100% on Windows |
+| bench app, `20260912-130914` | 24 | 73 to 100% on Linux and Windows, 34 to 51% on macOS |
 
 The following warm runs hit 57 to 100% (bench app) and 38 to 68% (monorepo)
 instead of nearly everything. `rust-cache` and `actions/cache` make one call
@@ -121,7 +157,7 @@ per job and are mostly immune, not entirely: both Windows repeats of
 `pw-cache-swatinem` tried to save the same key in the same second, GitHub
 answered with the rate limit, and neither save happened. Confidence: high
 (the counters are in the logs of 24 jobs). The threshold is not measured;
-batches of 30 and 42 jobs both lost more than half.
+batches of 24, 30 and 42 jobs all lost more than half.
 
 Implication: the `sccache` GitHub backend suits a workflow with a few
 concurrent jobs, not a large matrix. Check the `Cache write errors` line
@@ -481,7 +517,6 @@ bench app. Confidence: high (42 jobs).
 
 ## Not yet measured
 
-- `deps` change scenario for caches.
 - `deps`, `toolchain`, `combo` groups.
 - The `deps` scenario on the workspace app.
 - Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
