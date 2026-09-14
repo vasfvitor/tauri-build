@@ -1,0 +1,26 @@
+{
+  "name": "combo-fastest-mac",
+  "os": "macos-14",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-155043",
+  "change": "none",
+  "features": "",
+  "ncpu": 3,
+  "run_id": "34712414173",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 1,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 152,
+    "build_2": 0,
+    "cargo_1": 149,
+    "cargo_2": 0,
+    "job_total": 169
+  },
+  "binary_bytes": 8609568,
+  "bundle_kbytes": 0
+}

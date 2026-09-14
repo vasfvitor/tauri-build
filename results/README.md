@@ -28,6 +28,8 @@ committed.
 | `20260912-140937` | baseline-big, cgu-1, lto-fat, profile-fast | 4-core, 3-core | cold | profile flags against an in-batch reference | 3 samples each, 36 jobs, no failures. Rerun of the strongest `profile` claims; pooled with `20260911-000401` in the findings. |
 | `20260912-142710` | deps | 4-core, 3-core | cold (salted keys) | cost of `reqwest` + `tokio`; cost of saving `rust-cache` | 2 samples each, 12 jobs, no failures. |
 | `20260912-142710-warm-app` | deps | 4-core, 3-core | warm, app code changed | whether a cache erases dependency weight | 2 samples each, 12 jobs, no failures. |
+| `20260912-155043` | combo | 4-core, 3-core | cold (salted keys) | presets cold; rate limit with 4 `sccache` jobs in a 10-job batch | 2 samples each, 10 jobs, no failures. `sccache` lost 41 to 55% of its writes; the macOS r2 `rust-cache` save was refused by the rate limit. |
+| `20260912-155043-warm-app` | combo | 4-core, 3-core | warm, app code changed | presets warm | 2 samples each. macOS r2 ran without a cache (see the cold row), so its 2m10s is not a warm sample. |
 
 Reports were regenerated on 2026-09-10 after fixing the median for an even
 number of samples (it used to pick the lower one).

@@ -237,6 +237,16 @@ May be unstable; if it fails, that's a result too.
 These are the recommended presets the tutorial ends with, so they need
 to be validated together, not only individually.
 
+**Measured** (batches `20260912-155043` and `20260912-155043-warm-app`):
+`combo-fastest` built in 3m05s / 4m22s / 2m23s cold (Linux / Windows /
+macOS, against 5m03s / 5m25s / 3m04s) and 39 s / 1m42s / 39 s warm after an
+app change. `combo-release` was slower warm than `rust-cache` alone (cargo
+1m14s against 58 s on Linux, 2m25s against 1m45s on Windows): `sccache`
+missed its one request and cost its wrapper overhead, and its 4 jobs lost
+41 to 55% of their cold writes to the rate limit, taking a `rust-cache`
+save on macOS with them. The presets predate the findings; the tutorial's
+recommended ones drop `sccache` and the linker step.
+
 ## Group `workspace`
 
 Builds the `api` example of `tauri-apps/plugins-workspace` (input

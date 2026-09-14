@@ -1,0 +1,26 @@
+{
+  "name": "combo-fastest",
+  "os": "windows-2022",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-155043-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34712794144",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 6,
+    "js_packages": 0,
+    "frontend": 3,
+    "build_1": 105,
+    "build_2": 0,
+    "cargo_1": 100,
+    "cargo_2": 0,
+    "job_total": 153
+  },
+  "binary_bytes": 10990592,
+  "bundle_kbytes": 0
+}

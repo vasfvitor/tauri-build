@@ -1,0 +1,26 @@
+{
+  "name": "combo-release",
+  "os": "windows-2022",
+  "rep": 2,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-155043",
+  "change": "none",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34712414173",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 0,
+    "pnpm_install": 8,
+    "js_packages": 0,
+    "frontend": 3,
+    "build_1": 366,
+    "build_2": 0,
+    "cargo_1": 345,
+    "cargo_2": 0,
+    "job_total": 404
+  },
+  "binary_bytes": 10927616,
+  "bundle_kbytes": 5372
+}

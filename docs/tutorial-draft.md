@@ -110,9 +110,10 @@ whenever the lockfile changes. Measured, it doesn't:
   looks like that.
 - The GitHub Actions cache API rate-limits the repository, and `sccache`
   makes one request per object. In matrices of 24, 30, and 42 parallel
-  jobs it lost 34 to 100% of its writes on every platform. It reports the
-  loss only as `Cache write errors` in `sccache --show-stats`; the job
-  succeeds and the cache is quietly partial.
+  jobs it lost 34 to 100% of its writes on every platform, and 4 `sccache`
+  jobs in a 10-job run still lost half, and got a `rust-cache` save in the
+  same run refused. It reports the loss only as `Cache write errors` in
+  `sccache --show-stats`; the job succeeds and the cache is quietly partial.
 
 The scenarios where `sccache` would earn its place, a missing `target/`
 cache with objects compiled before, or a workflow with a handful of
@@ -297,9 +298,12 @@ compiling in parallel below it is free.
 
 ## Recommended presets
 
-**Pull request check.** Cache, no bundlers, fast profile. Each part is
-measured earlier; together they take a Linux check from 5 minutes cold to
-roughly a minute of compile plus setup on a warm cache:
+**Pull request check.** Cache, no bundlers, fast profile. Measured
+together (with `codegen-units = 256` and `lto = "off"` standing in for the
+`fast` profile), `tauri build` took 3m05s / 4m22s / 2m23s cold and
+39 s / 1m42s / 39 s warm after an app change, against 5m03s / 5m25s /
+3m04s for a plain cold build. The whole warm job, including checkout and toolchain,
+was 1m16s to 1m38s on Linux:
 
 ```yaml
 - uses: Swatinem/rust-cache@v2
@@ -309,8 +313,10 @@ roughly a minute of compile plus setup on a warm cache:
 - run: pnpm tauri build --no-bundle -- --profile fast
 ```
 
-**Release.** Same cache, the release profile as shipped, all bundlers,
-with retries on the bundle and upload steps:
+**Release.** Same cache, the release profile as shipped, and all bundlers. Retry the bundle and upload steps.
+A "release preset" with
+`sccache`, `lld`, and thin LTO on top was measured too, and came out 15 to
+40 s slower warm than the cache alone; there is nothing to add here:
 
 ```yaml
 - uses: Swatinem/rust-cache@v2

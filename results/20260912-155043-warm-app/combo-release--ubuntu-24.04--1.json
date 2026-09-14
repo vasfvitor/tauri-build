@@ -1,0 +1,26 @@
+{
+  "name": "combo-release",
+  "os": "ubuntu-24.04",
+  "rep": 1,
+  "app": "bench",
+  "status": "success",
+  "tag": "20260912-155043-warm-app",
+  "change": "app",
+  "features": "",
+  "ncpu": 4,
+  "run_id": "34712794144",
+  "run_attempt": "1",
+  "seconds": {
+    "sysdeps": 20,
+    "pnpm_install": 2,
+    "js_packages": 0,
+    "frontend": 2,
+    "build_1": 161,
+    "build_2": 0,
+    "cargo_1": 83,
+    "cargo_2": 0,
+    "job_total": 203
+  },
+  "binary_bytes": 10669288,
+  "bundle_kbytes": 346820
+}

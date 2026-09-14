@@ -150,14 +150,19 @@ still succeeds and the cache is quietly partial:
 | bench app, `20260910-170743` | 30 | 60 to 85%, every runner |
 | monorepo, `20260910-194307` | 42 | 56% on Linux and macOS, 100% on Windows |
 | bench app, `20260912-130914` | 24 | 73 to 100% on Linux and Windows, 34 to 51% on macOS |
+| bench app, `20260912-155043` | 10, 4 of them with `sccache` | 41 to 55%, plus one `rust-cache` save on macOS |
 
 The following warm runs hit 57 to 100% (bench app) and 38 to 68% (monorepo)
 instead of nearly everything. `rust-cache` and `actions/cache` make one call
 per job and are mostly immune, not entirely: both Windows repeats of
 `pw-cache-swatinem` tried to save the same key in the same second, GitHub
 answered with the rate limit, and neither save happened. Confidence: high
-(the counters are in the logs of 24 jobs). The threshold is not measured;
-batches of 24, 30 and 42 jobs all lost more than half.
+(the counters are in the logs of 24 jobs). The threshold is low:
+batches of 24, 30 and 42 jobs all lost more than half, and so did 4
+`sccache` jobs running next to 6 others. In that small batch the limit also
+took a `rust-cache` save with it (the log says "You've hit a rate limit" and then "Unable
+to reserve cache"), so `sccache` jobs degrade the other caches of the same
+run.
 
 Implication: the `sccache` GitHub backend suits a workflow with a few
 concurrent jobs, not a large matrix. Check the `Cache write errors` line
@@ -508,6 +513,51 @@ inside the spread on macOS, plus a larger `target/` to cache. It only pays
 on a second build of the same `target/`; see In-job rebuilds for what it
 buys there. Confidence: medium.
 
+## Presets (the `combo` group)
+
+The three presets were written before the measurements and validate the
+parts together: `combo-fastest` is `rust-cache` + `lld` + 256 codegen units
++ `lto = "off"` + `--no-bundle` (no linker step on macOS); `combo-release`
+is `rust-cache` + `sccache` + `lld` + `lto = "thin"`. Cold, then warm after
+the app-crate change, 2 samples per cell, batches `20260912-155043` and
+`20260912-155043-warm-app`.
+
+### The pull request preset builds in 39 s warm on Linux
+
+| `tauri build` | Linux | Windows | macOS |
+|---|---:|---:|---:|
+| baseline, cold, all bundles | 5m03s | 5m25s | 3m04s |
+| `combo-fastest`, cold | 3m05s (-39%) | 4m22s (-20%) | 2m23s (-22%) |
+| `rust-cache` alone, warm | 2m17s | 2m06s | 1m17s |
+| `combo-fastest`, warm | 0m39s | 1m42s | 0m39s* |
+
+Warm cargo was 35 to 37 s on Linux, 1m34s to 1m40s on Windows, 37 s on
+macOS; the whole job, with checkout, toolchain, cache restore and (on
+Linux) `apt`, took 1m16s to 1m38s on Linux, 2m32s on Windows, 1m08s on
+macOS. The parts add up as measured one by one: no bundlers is the bulk of
+the Linux win, `lto = "off"` most of the Windows one. Confidence: medium
+(2 samples; the preset differs from the recommended one by using
+`codegen-units = 256` instead of `opt-level = 1`, and by a linker step the
+linker entry shows to be idle).
+
+*One of the two macOS repetitions lost its cold cache save to the rate
+limit (see the rate limit entry) and rebuilt everything in 2m10s; the 39 s
+is the repetition with a cache.
+
+### The release preset with `sccache` is slower warm than `rust-cache` alone
+
+| cargo | Linux | Windows |
+|---|---:|---:|
+| `rust-cache` alone, warm | 0m58s | 1m45s |
+| `combo-release` (`rust-cache` + `sccache` + `lld` + thin LTO), warm | 1m14s | 2m25s |
+| `combo-release`, cold | 3m35s | 5m41s |
+
+Warm, `sccache` saw one compile request (the app crate) and missed it, and
+its wrapper cost 15 to 40 s over plain `rust-cache`. Cold it lost 41 to
+55% of its writes. Thin LTO and `lld` did nothing, as measured on their
+own. Confidence: medium. Implication: the release preset is `rust-cache`
+and the release profile, nothing else.
+
 ## A monorepo app (the plugins-workspace `api` example)
 
 The `workspace` group builds the `api` example of `tauri-apps/plugins-workspace`:
@@ -599,8 +649,8 @@ bench app. Confidence: high (42 jobs).
 
 ## Not yet measured
 
-- `toolchain` and `combo` groups.
+- The `toolchain` group (nightly, parallel front-end).
 - The `deps` scenario on the workspace app.
-- Where the cache API rate limit starts for `sccache`: a batch with 3 to 6
-  concurrent jobs.
+- Where the cache API rate limit starts for `sccache`: 4 concurrent
+  `sccache` jobs already lose half; 1 or 2 are not measured.
 - Larger runners, prebuilt containers, cross-compilation.
